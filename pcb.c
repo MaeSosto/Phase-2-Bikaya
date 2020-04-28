@@ -57,12 +57,6 @@ struct pcb_t *allocPcb(void){
 	tempPcb->p_s.pc_epc = 0;
 	tempPcb->p_s.hi = 0;
 	tempPcb->p_s.lo = 0;
-	tempPcb->user_start=0;
-    tempPcb->user_total=0;
-    tempPcb->kernel_start=0;
-    tempPcb->kernel_total=0;
-    tempPcb->start_time=0;
-    tempPcb->wallclock_start=0;
 	#endif
 
 	#ifdef TARGET_UARM
@@ -88,12 +82,6 @@ struct pcb_t *allocPcb(void){
 	tempPcb->p_s.CP15_Cause = 0;
 	tempPcb->p_s.TOD_Hi = 0;
 	tempPcb->p_s.TOD_Low = 0;
-	tempPcb->user_start=0;
-	tempPcb->user_total=0;
-    tempPcb->kernel_start=0;
-    tempPcb->kernel_total=0;
-    tempPcb->start_time=0;
-    tempPcb->wallclock_start=0;
 	#endif
 
 	//Campi di tipo list_head: uso INIT_LIST_HEAD

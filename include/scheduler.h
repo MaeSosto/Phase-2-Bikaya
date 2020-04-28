@@ -3,5 +3,6 @@
 
   void Scheduling();
   void Aging();
+  void ContextSwitch();
 
 #endif

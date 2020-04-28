@@ -49,9 +49,6 @@ all : kernel.core.umps
 utils.o : utils.c include/utils.h
 	$(CC) -c $(CFLAGS) $<
 
-syscall.o : syscall.c include/syscall.h
-	$(CC) -c $(CFLAGS) $<
-
 scheduler.o : scheduler.c include/scheduler.h
 	$(CC) -c $(CFLAGS) $<
 
@@ -64,19 +61,13 @@ kernel.o : kernel.c
 pcb.o : pcb.c include/pcb.h
 	$(CC) -c $(CFLAGS) $<
 
-asl.o : asl.c include/asl.h
-	$(CC) -c $(CFLAGS) $<
-
-p2test_bikaya_v0.1.o : p2test_bikaya_v0.1.c
-	$(CC) -c $(CFLAGS) $<
-
 p1.5test_bikaya_v0.o : p1.5test_bikaya_v0.c
 	$(CC) -c $(CFLAGS) $<
 
 kernel.core.umps : kernel
 	umps2-elf2umps -k $<
 
-kernel : pcb.o asl.o utils.o syscall.o scheduler.o kernel.o handler.o p2test_bikaya_v0.1.o p1.5test_bikaya_v0.o
+kernel : pcb.o utils.o scheduler.o kernel.o handler.o p1.5test_bikaya_v0.o
 	$(LD) -o $@ $^ $(CRTSO_PATH) $(LIBUMPS_PATH) $(LDFLAGS)
 
 clean :
