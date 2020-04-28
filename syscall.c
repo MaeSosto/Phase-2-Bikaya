@@ -161,13 +161,15 @@ int TerminateProcess(void * pid){
 
         //Termino il processo e lo libero rimuovendolo dalla ready queue
         freePcb(tempPcb); 
+
+        ACTIVE_PCB = NULL;
         
         return 0;
     }
 
 }
 
-//SYSCALL 4 - tolgo il rocesso dall'attesa
+//SYSCALL 4 - risveglia il rocesso dall'attesa
 void Verhogen(int *semaddr){
 
     // void SYSCALL(VERHOGEN, int *semaddr, 0, 0)
@@ -176,7 +178,6 @@ void Verhogen(int *semaddr){
     // tipo intero passata per indirizzo. L’indirizzo
     // della variabile agisce da identificatore per il
     // semaforo.
-    //
     
     //  Il semaforo viene incrementato. Se ci sono task in coda, uno dei task in coda il primo viene tolto dalla coda, posto in stato di ready (sarà perciò eseguito appena schedulato dal sistema operativo).
     // V(): incrementa il valore. Nel caso in cui ho 1 o più thread nella lista d'attesa, prelevo il primo e lo inserisco nella lista dei pronti. Se non sono presenti thread nella lista d'attesa il risultato sarà che avremo la variabile incrementata di 1.

@@ -43,6 +43,7 @@ int main(){
 
 	//Inizializziamo la pcbFree
 	initPcbs();
+	
 	initASL();
 
 	//Instanziare il PCB e lo stato del singolo processo di test

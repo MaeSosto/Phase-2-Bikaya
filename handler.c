@@ -41,37 +41,27 @@ int insert = FALSE;
 void interruptHandler(){
 	termprint("sono dentro un interrupttttt");
 	// salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-	ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
+	//ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
 	//inizio a contare il tempo in user mode
-	ACTIVE_PCB->kernel_start = getTODLO();
+	//ACTIVE_PCB->kernel_start = getTODLO();
 
 	//Salvo i registri dell'old area dell'interrupt al processo 
 	state_t* oldarea = ((state_t*)INT_OLDAREA);
 
-	#ifdef TARGET_UARM
+  	#ifdef TARGET_UARM
 
 		//Decremento il program counter dell'interrupt old area di una word
 		oldarea->pc = oldarea->pc - 4;
 
 	#endif
-
-	//Inviamo ACK a CP0
-	*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
-
-	//Aging
-	Aging();
-
-	//Ripristiniamo l'original_priority del processo appena concluso
-	ACTIVE_PCB->priority = ACTIVE_PCB->original_priority;
-
-	//Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato 
+	
+	/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
 	SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
 
-	//Rimetto il processo in attesa nella Ready Queue
-	insertProcQ(ready_queue, ACTIVE_PCB);
+  	//Inviamo ACK a CP0
+  	*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
 
-	//Rientro nello scheduler
-	Scheduling();
+ 	Scheduling();
 
 }
 
