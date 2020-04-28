@@ -206,29 +206,6 @@ void SaveOldState(state_t* oldarea, state_t* processo){
 	
 }
 
-//Salva il processo prima di poterlo mettere di nuovo nella ready queue
-void SaveProc(){
-
-	//Salvo i registri dell'old area dell'interrupt al processo 
-	state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
-
-	#ifdef TARGET_UMPS
-
-		//dopo aver invocato una system call e’ necessario incrementare il program counter di una word affinché il processo continui
-		oldarea->pc_epc = oldarea->pc_epc + 4;
-
-	#endif
-
-	//Ripristiniamo l'original_priority del processo appena concluso
-	//ACTIVE_PCB->priority = ACTIVE_PCB->original_priority;
-
-	//Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato 
-	SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
-
-	//Rimetto il processo in attesa nella Ready Queue
-	insertProcQ(ready_queue, ACTIVE_PCB);
-
-}
 
 //Alloca spazio in memoria per i semafori dei device
 void InitSemd(){

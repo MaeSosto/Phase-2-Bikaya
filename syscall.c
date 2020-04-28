@@ -11,9 +11,7 @@
 	#include <umps/libumps.h> 
     #include <umps/types.h>
     #include <umps/arch.h>
-    #define INT_OLDAREA 0x20000000
-    #define SYSCALL_OLDAREA 0x20000348
-    	#define MAX_DEVICES (DEV_USED_INTS * DEV_PER_INT) + DEV_PER_INT + 1
+    #define MAX_DEVICES (DEV_USED_INTS * DEV_PER_INT) + DEV_PER_INT + 1
 
 #endif
 
@@ -199,13 +197,13 @@ void Verhogen(int *semaddr){
         
     }
 
-    if(insert){
+    // if(insert){
 
-        //Salvo il processo corrente e lo rimetto nella ready queue
-	    SaveProc();
-        termprint("Salvo nella verhogen \n");
+    //     //Salvo il processo corrente e lo rimetto nella ready queue
+    //	   SaveProc();
+    //     termprint("Salvo nella verhogen \n");
 
-    }
+    // }
 
 }
 
@@ -227,25 +225,26 @@ void Passeren(int *semaddr){
     //Controllo se ci sono altri processi bloccati
     if (*semaddr < 0){
         
+        //Salvo i registri dell'old area della sys al processo 
+        state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
+
+        //Copio lo stato della old area della sys nel processo che lo ha sollevato 
+        SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
+
         //Metto il processo nella coda del semaforo
 	 	int ret = insertBlocked(semaddr, ACTIVE_PCB);
         
         //assegnamento al semd NON andato a buon fine
         if(ret){
+
             PANIC();
+        
         }
      
     }
 
-    if(insert){
-
-        //Salvo il processo corrente e lo rimetto nella ready queue
-	    SaveProc();
-        termprint("Salvo nella passaren \n");
-
-    }
-    
     // L'ACTIVE PCB VA MESSO A NULL ALLA FINE DELLA SYSCALL PRIMA DI CHIAMARE LO SCHEDULER
+    ACTIVE_PCB = NULL;
 
 }
 
@@ -337,15 +336,15 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
 	// }
 
 
-    insert = TRUE;
+    // insert = TRUE;
 
-    if(insert){
+    // if(insert){
 
-        //Salvo il processo corrente e lo rimetto nella ready queue
-	    SaveProc();
-        termprint("Salvo nella do_io \n");
+    //     //Salvo il processo corrente e lo rimetto nella ready queue
+	//     SaveProc();
+    //     termprint("Salvo nella do_io \n");
 
-    }
+    // }
 
     return status;
 }

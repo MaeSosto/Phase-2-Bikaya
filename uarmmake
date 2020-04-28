@@ -39,6 +39,12 @@ utils.o : utils.c include/utils.h
 scheduler.o : scheduler.c include/scheduler.h
 	$(CC) -c $(CFLAGS) $<
 
+interrupt.o : interrupt.c include/interrupt.h
+	$(CC) -c $(CFLAGS) $<
+
+syscall.o : syscall.c include/syscall.h
+	$(CC) -c $(CFLAGS) $<
+	
 handler.o : handler.c include/handler.h
 	$(CC) -c $(CFLAGS) $<
 
@@ -48,10 +54,10 @@ kernel.o : kernel.c
 pcb.o : pcb.c include/pcb.h
 	$(CC) -c $(CFLAGS) $<
 
-p1.5test_bikaya_v0.o : p1.5test_bikaya_v0.c
+p2test_bikaya_v0.1.o : p2test_bikaya_v0.1.c
 	$(CC) -c $(CFLAGS) $<
 
-kernel : pcb.o utils.o scheduler.o kernel.o handler.o p1.5test_bikaya_v0.o
+kernel : pcb.o utils.o scheduler.o syscall.o interrupt.o kernel.o handler.o p2test_bikaya_v0.1.o
 	$(LD) -o $@ $^ $(CRTSO_PATH) $(LIBUARM_PATH) $(LIBDIV_PATH) $(LDFLAGS)
 
 clean:

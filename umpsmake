@@ -52,6 +52,9 @@ utils.o : utils.c include/utils.h
 syscall.o : syscall.c include/syscall.h
 	$(CC) -c $(CFLAGS) $<
 
+interrupt.o : interrupt.c include/interrupt.h
+	$(CC) -c $(CFLAGS) $<
+
 scheduler.o : scheduler.c include/scheduler.h
 	$(CC) -c $(CFLAGS) $<
 
@@ -76,7 +79,7 @@ p1.5test_bikaya_v0.o : p1.5test_bikaya_v0.c
 kernel.core.umps : kernel
 	umps2-elf2umps -k $<
 
-kernel : pcb.o asl.o utils.o syscall.o scheduler.o kernel.o handler.o p2test_bikaya_v0.1.o p1.5test_bikaya_v0.o
+kernel : pcb.o asl.o utils.o syscall.o interrupt.o scheduler.o kernel.o handler.o p2test_bikaya_v0.1.o p1.5test_bikaya_v0.o
 	$(LD) -o $@ $^ $(CRTSO_PATH) $(LIBUMPS_PATH) $(LDFLAGS)
 
 clean :

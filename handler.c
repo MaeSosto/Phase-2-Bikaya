@@ -10,9 +10,7 @@
 	#include "umps/arch.h"
 	#include "umps/cp0.h"
 	#include <umps/libumps.h>
-	#define INT_OLDAREA 0x20000000
-	#define SYSCALL_OLDAREA   0x20000348
-	#define SYS3              3
+	#define SYSBK_OLDAREA 0x20000348
 	extern void termprint(char* str);
 
 #endif
@@ -37,34 +35,6 @@ extern struct pcb_t *ACTIVE_PCB;
 extern struct list_head* ready_queue;
 int insert = FALSE;
 
-//Gestore degli interrupt
-void interruptHandler(){
-	termprint("sono dentro un interrupttttt");
-	// salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-	//ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
-	//inizio a contare il tempo in user mode
-	//ACTIVE_PCB->kernel_start = getTODLO();
-
-	//Salvo i registri dell'old area dell'interrupt al processo 
-	state_t* oldarea = ((state_t*)INT_OLDAREA);
-
-  	#ifdef TARGET_UARM
-
-		//Decremento il program counter dell'interrupt old area di una word
-		oldarea->pc = oldarea->pc - 4;
-
-	#endif
-	
-	/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
-	SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
-
-  	//Inviamo ACK a CP0
-  	*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
-
- 	Scheduling();
-
-}
-
 
 //Gestore delle system call
 void syscallHandler(){
@@ -73,15 +43,16 @@ void syscallHandler(){
 
 	//Metti in pausa il contatore del tempo del pcb e aggiorni il suo valore 
 
-	struct state *AREA;
+	// struct state *AREA;
 	unsigned int cause;
 	int flag = 0; //Setto a true se devo ritornare qualcosa
 	unsigned int ritorno; //Assegno il valore di ritorno
 
+	struct state *AREA = (state_t *) SYSBK_OLDAREA;
+	
   	#ifdef TARGET_UMPS
 
 		//Accedo alla Old Area della system call
-		AREA=(struct state *) SYSCALL_OLDAREA;
 		cause = (CAUSE_GET_EXCCODE(AREA->cause));
 	
 	#endif
@@ -89,7 +60,6 @@ void syscallHandler(){
 	#ifdef TARGET_UARM
     
     	//Accedo alla Old Area della system call
-    	AREA = (state_t *) SYSBK_OLDAREA;
 		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
         
 	#endif
@@ -190,13 +160,33 @@ void syscallHandler(){
 	//Controllo che sia un Breakpoint (EXC_BP 9)
     else if(CAUSE_GET_EXCCODE(AREA->cause) == EXC_BP){
     
-      //termprint("E' partito un Breakpoint \n");
+    	//termprint("E' partito un Breakpoint \n");
     
     }
 
-	//Chiamo lo scheduler
-	Scheduling();
+	#ifdef TARGET_UMPS
+    	
+		state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
 
+		//dopo aver invocato una system call e’ necessario incrementare il program counter di una word affinché il processo continui
+		oldarea->pc_epc = oldarea->pc_epc + 4;
+
+	#endif
+
+	//Ho un processo ancora attivo in cpu
+	if(ACTIVE_PCB != NULL){
+
+		LDST(&ACTIVE_PCB->p_s);
+
+	}
+
+	//Non ho più processi attivi sulla cpu
+	else{
+
+		//Chiamo lo scheduler
+		Scheduling();
+	
+	}
 }
 
 //Gestore delle trap
