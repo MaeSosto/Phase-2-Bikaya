@@ -1,7 +1,9 @@
 #ifndef ASL_H
 #define ASL_H
 
-#include <types_bikaya.h>
+    #include "const.h"
+    #include "pcb.h"
+    #include <types_bikaya.h>
 
     /* ASL handling functions 14 - 20 */
 

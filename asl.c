@@ -1,12 +1,4 @@
-/****************************************/
-/* Progetto  SO 2019 - Rikaya      	*/
-/* Gruppo lso19az18                 	*/
-/* Ultimo agg: 24/12/2018 		*/
-/****************************************/
-
 #include "include/asl.h"
-#include "include/const.h"
-#include "include/pcb.h"
 
 HIDDEN LIST_HEAD(semd_h); 		//semd_h è la sentinella della lista ASL (lista dei semd attivi)
 

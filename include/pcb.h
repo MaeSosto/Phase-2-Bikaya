@@ -1,7 +1,10 @@
 #ifndef PCB_H
 #define PCB_H
 
-#include "types_bikaya.h"
+	#include "pcb.h"
+	#include <const.h>
+	#include "listx.h"
+	#include "types_bikaya.h"
 
 	/* PCB afree list handling functions 1 - 3 */
 	void initPcbs(void);

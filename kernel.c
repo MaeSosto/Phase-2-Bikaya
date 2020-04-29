@@ -1,6 +1,6 @@
 #include "include/pcb.h"
-#include "include/utils.h"
 #include "include/scheduler.h"
+#include "include/utils.h"
 #include "include/types_bikaya.h"
 #include "include/asl.h"
 #include "include/const_bikaya.h"
@@ -31,6 +31,8 @@ LIST_HEAD(asl_queue);
 struct list_head* ready_queue = &(r_queue);
 struct device_semd Semaforo;
 int SemMem[MAX_DEVICES];
+struct pcb_t *ACTIVE_PCB = NULL;
+struct pcb_t *GOODMORNING_PCB = NULL; //Processo svegliato nella Verhogen
 
 //MAIN
 int main(){

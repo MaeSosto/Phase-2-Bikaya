@@ -1,6 +1,42 @@
 #ifndef _SYSCALL_H_
 #define _SYSCALL_H_
 
+    #include "const_bikaya.h"
+    #include "types_bikaya.h"
+    #include "listx.h"
+    #include "pcb.h"
+    #include "asl.h"
+    #include "utils.h"
+
+    #ifdef TARGET_UMPS
+
+        #include <umps/libumps.h> 
+        #include <umps/types.h>
+        #include <umps/arch.h>
+        #define MAX_DEVICES (DEV_USED_INTS * DEV_PER_INT) + DEV_PER_INT + 1
+
+    #endif
+
+    #ifdef TARGET_UARM
+
+        #include <uarm/arch.h>
+        #include <uarm/uARMtypes.h>
+        #include <uarm/uARMconst.h>
+
+    #endif
+
+    extern struct pcb_t *ACTIVE_PCB;
+    extern struct pcb_t *GOODMORNING_PCB;
+    extern struct list_head* ready_queue;
+    extern struct device_semd Semaforo;
+    extern int SemMem[MAX_DEVICES];
+    extern void termprint(char *str);
+
+    #define BUS_TODLOW  0x1000001c
+    #define BUS_TODHIGH 0x10000018
+    #define getTODLO() (*((unsigned int *)BUS_TODLOW))
+
+
     void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock);
 
     //SYSCALL 2
