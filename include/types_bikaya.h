@@ -70,7 +70,8 @@
         semd_t tape[DEV_PER_INT];
         semd_t network[DEV_PER_INT];
         semd_t printer[DEV_PER_INT];
-        semd_t terminal[DEV_PER_INT];
+        semd_t terminalT[DEV_PER_INT];
+        semd_t terminalR[DEV_PER_INT];
     } device_semd;
 
 

@@ -13,7 +13,6 @@
         #include <umps/libumps.h> 
         #include <umps/types.h>
         #include <umps/arch.h>
-        #define MAX_DEVICES (DEV_USED_INTS * DEV_PER_INT) + DEV_PER_INT + 1
 
     #endif
 
@@ -24,13 +23,15 @@
         #include <uarm/uARMconst.h>
 
     #endif
+    
+    #define MAX_SEM 48
 
     extern struct pcb_t *ACTIVE_PCB;
     extern struct pcb_t *GOODMORNING_PCB;
     extern unsigned int BLOCK_COUNT;
     extern struct list_head* ready_queue;
     extern struct device_semd Semaforo;
-    extern int SemMem[MAX_DEVICES];
+    extern int SemMem[MAX_SEM];
     extern void termprint(char *str);
 
     #define BUS_TODLOW  0x1000001c

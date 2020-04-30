@@ -6,7 +6,8 @@
 	#include "types_bikaya.h"
 	#include "const_bikaya.h"
 	#include "scheduler.h"
-
+	
+	
 	#ifdef TARGET_UMPS
 
 		#include <umps/cp0.h>
@@ -28,9 +29,6 @@
 		#define INTERRUPT_NEWAREA 0x2000008C
 		#define INTERRUPT_OLDAREA 0x20000000
 
-		//Numero massimo di linee/device che posso avere
-		#define MAX_DEVICES (DEV_USED_INTS * DEV_PER_INT) + DEV_PER_INT + 1
-
 	#endif
 
 	#ifdef TARGET_UARM
@@ -46,10 +44,12 @@
 	#define BUS_TODHIGH 0x10000018
 	#define getTODLO() (*((unsigned int *)BUS_TODLOW))
 
+	#define MAX_SEM 48
+	
 	extern struct pcb_t *ACTIVE_PCB;
 	extern struct list_head* ready_queue;
 	extern struct device_semd Semaforo;
-	extern int SemMem[MAX_DEVICES];
+	extern int SemMem[MAX_SEM];
 	extern void termprint(char *str);
 
 	//Inizializzo le Areas

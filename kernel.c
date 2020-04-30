@@ -12,7 +12,6 @@
 	#include <umps/regdef.h>
 	#include <umps/libumps.h>
 	#include <umps/arch.h>
-	#define MAX_DEVICES (DEV_USED_INTS * DEV_PER_INT) + DEV_PER_INT + 1
 
 #endif
 
@@ -26,11 +25,12 @@
 
 extern void test();
 
+#define MAX_SEM 48
 LIST_HEAD(r_queue);
 LIST_HEAD(asl_queue);
 struct list_head* ready_queue = &(r_queue);
 struct device_semd Semaforo;
-int SemMem[MAX_DEVICES];
+int SemMem[MAX_SEM];
 struct pcb_t *ACTIVE_PCB = NULL;
 struct pcb_t *GOODMORNING_PCB = NULL; //Processo svegliato nella Verhogen
 unsigned int BLOCK_COUNT = 0;

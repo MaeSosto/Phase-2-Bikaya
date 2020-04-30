@@ -221,25 +221,14 @@ void syscallHandler(){
 			//Inoltro al gestore di livello superiore (Spec_Passup) oppure termina
 		}
 
-		if (flag == 1){
-
-			#ifdef TARGET_UMPS
-				AREA->reg_v0 = ritorno;
-			#endif
-
-			#ifdef TARGET_UARM
-				AREA->reg_a0 = ritorno;
-			#endif
-		}
-
     }
 
-	//Controllo che sia un Breakpoint (EXC_BP 9)
-    else if(CAUSE_GET_EXCCODE(AREA->cause) == EXC_BP){
+	// //Controllo che sia un Breakpoint (EXC_BP 9)
+    // else if(CAUSE_GET_EXCCODE(AREA->cause) == EXC_BP){
     
-    	termprint("E' partito un Breakpoint \n");
+    // 	termprint("E' partito un Breakpoint \n");
     
-    }
+    // }
 
 	#ifdef TARGET_UMPS
 
@@ -248,12 +237,29 @@ void syscallHandler(){
 
 	#endif
 
+	
 	//Ho un processo ancora attivo in cpu
 	if(ACTIVE_PCB != NULL){
 
 		termprint("Sys: ricarico processo in CPU \n");
 		
 		SaveOldState(AREA, &(ACTIVE_PCB->p_s));
+
+		if (flag == 1){
+
+			#ifdef TARGET_UMPS
+			
+				ACTIVE_PCB->p_s.reg_v0 = ritorno;
+			
+			#endif
+
+			#ifdef TARGET_UARM
+
+				ACTIVE_PCB->p_s.reg_a0 = ritorno;
+			
+			#endif
+		}
+
 		LDST(&ACTIVE_PCB->p_s);
 
 	}
