@@ -7,8 +7,9 @@
 
 	#ifdef TARGET_UMPS
 
-		#include "umps/libumps.h"
-		#include "umps/arch.h"
+		#include <umps/libumps.h>
+		#include <umps/arch.h>
+		#include <umps/cp0.h>
 		extern void termprint(char* str);
 
 	#endif
@@ -28,6 +29,8 @@
 
 	extern struct list_head* ready_queue;
 	extern struct pcb_t *ACTIVE_PCB;
+	extern unsigned int BLOCK_COUNT;
+	extern void stampaInt(int n);
 
 	void Scheduling();
 

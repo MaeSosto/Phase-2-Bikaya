@@ -16,7 +16,7 @@
         #define SYSBK_OLDAREA 0x20000348
         
         /* Returns 1 if the interrupt int_no is pending */
-        #define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 24)))
+        #define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 8)))
         
         extern void termprint(char* str);
 
@@ -29,6 +29,9 @@
         #include <uarm/arch.h>
         #include <uarm/libuarm.h>
         extern void tprint(char* str);
+
+        //PER UARM VEDI FILE UARMcost.h riga 164
+        //#define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 24)))
 
     #endif
 

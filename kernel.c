@@ -33,6 +33,7 @@ struct device_semd Semaforo;
 int SemMem[MAX_DEVICES];
 struct pcb_t *ACTIVE_PCB = NULL;
 struct pcb_t *GOODMORNING_PCB = NULL; //Processo svegliato nella Verhogen
+unsigned int BLOCK_COUNT = 0;
 
 //MAIN
 int main(){

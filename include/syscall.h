@@ -27,6 +27,7 @@
 
     extern struct pcb_t *ACTIVE_PCB;
     extern struct pcb_t *GOODMORNING_PCB;
+    extern unsigned int BLOCK_COUNT;
     extern struct list_head* ready_queue;
     extern struct device_semd Semaforo;
     extern int SemMem[MAX_DEVICES];

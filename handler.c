@@ -6,9 +6,6 @@
 
 #define INT_IP_GET(cause) ((cause >> 8) & 0xFF)
 
-//PER UARM VEDI FILE UARMcost.h riga 164
-//#define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 24)))
-
 //Gestore degli interrupt
 void interruptHandler(){
 	
@@ -42,81 +39,66 @@ void interruptHandler(){
 
 	#endif
 
-
-	if(INT_IP_GET(cause) == INT_T_SLICE){
+	
+	//Linee interrupt da confrontare per trovare l'interrupt giusto fra gli 8 possibili
+	
+	//Interrupt 1 - Inter-processor interrupts
+	if(CAUSE_IP_GET(cause, INT_T_SLICE)){
 		
 		termprint("Interrupt: 1 \n");
-	}else if(INT_IP_GET(cause) == INT_TIMER){
-		termprint("Interrupt: 2 \n");
+	
+	}
+	
+	//Interrupt 2 Interval Timer
+	else if(CAUSE_IP_GET(cause, INT_TIMER)){
 
+		termprint("Interrupt: 2 \n");
 		InterruptIntervalTimer();
-	}else if(INT_IP_GET(cause) == INT_DISK){
+
+	}
+	
+	//Interrut 3 - Disk
+	else if(CAUSE_IP_GET(cause, INT_DISK)){
+		
 		termprint("Interrupt: 3 \n");
-	}else if(INT_IP_GET(cause) == INT_TAPE){
+		
+	}
+	
+	//Interrupt 4 - Tape
+	else if(CAUSE_IP_GET(cause, INT_TAPE)){
+
 		termprint("Interrupt: 4 \n");
 		InterruptTape();
-	}else if(INT_IP_GET(cause) == INT_UNUSED){
+	
+	}
+	
+	//Interrupt 5 - Network
+	else if(CAUSE_IP_GET(cause, INT_UNUSED)){	
+			
 		termprint("Interrupt: 5 \n");
-	}else if(INT_IP_GET(cause) == INT_PRINTER){
+	
+	}
+	
+	//Interrupt 6 - Printer
+	else if(CAUSE_IP_GET(cause, INT_PRINTER)){
+		
 		termprint("Interrupt: 6 \n");
-	}else if(INT_IP_GET(cause) == INT_TERMINAL){
-		termprint("Interrupt: 7 \n");
-	}else{
-		termprint("Interrupt: err\n");
+		
 	}
 
-    //Linee interrupt da confrontare per trovare l'interrupt giusto fra gli 8 possibili
-    
-	// //Interrupt 1 - Inter-processor interrupts
-	// if(INTERRUPT_PENDING_FUNC(cause) == INT_T_SLICE){
+	//Interrupt 7- Terminal
+	else if(CAUSE_IP_GET(cause, INT_TERMINAL)){
+		
+		termprint("Interrupt: 7 \n");
+	
+	}
 
-	// 	termprint("Interrupt: 1 \n");
-	
-	// }
-	// //Interrupt 2 Interval Timer
-	// else if(INTERRUPT_PENDING_FUNC(cause) == INT_TIMER){
+	//NON SO
+	else{
 		
-	// 	termprint("Interrupt: 2 \n");
-	// 	InterruptIntervalTimer();
-	// 	Scheduling();
-	
-	// }
-	// //Interrut 3 - Disk
-	// else if(INTERRUPT_PENDING_FUNC(cause) == INT_DISK){
-	
-	// 	termprint("Interrupt: 3 \n");
-	
-	// }
-	// //Interrupt 4 - Tape
-	// else if(INTERRUPT_PENDING_FUNC(cause) == INT_TAPE){
-	
-	// 	termprint("Interrupt: 4 \n");
-	
-	// }
-	// //Interrupt 5 - Network
-	// else if(INTERRUPT_PENDING_FUNC(cause) == INT_UNUSED){
-	
-	// 	termprint("Interrupt: 5 \n");
-	
-	// }
-	// //Interrupt 6 - Printer
-	// else if(INTERRUPT_PENDING_FUNC(cause) == INT_PRINTER){
-	
-	// 	termprint("Interrupt: 6 \n");
-	
-	// }
-	// //Interrupt 7 - Terminal
-	// else if(INTERRUPT_PENDING_FUNC(cause) == INT_TERMINAL){
+		termprint("Interrupt: err\n");
 		
-	// 	termprint("Interrupt: 7 \n");
-	
-	// }
-	
-	// else{
-		
-	// 	termprint("Interrupt: non so in che interrupt sono\n");
-	
-	// }
+	}
 
 	//Inviamo ACK a CP0
   	//*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
@@ -252,27 +234,26 @@ void syscallHandler(){
 
     }
 
-	// //Controllo che sia un Breakpoint (EXC_BP 9)
-    // else if(CAUSE_GET_EXCCODE(AREA->cause) == EXC_BP){
+	//Controllo che sia un Breakpoint (EXC_BP 9)
+    else if(CAUSE_GET_EXCCODE(AREA->cause) == EXC_BP){
     
-    // 	//termprint("E' partito un Breakpoint \n");
+    	termprint("E' partito un Breakpoint \n");
     
-    // }
+    }
 
 	#ifdef TARGET_UMPS
-    	
-		state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
 
 		//dopo aver invocato una system call e’ necessario incrementare il program counter di una word affinché il processo continui
-		oldarea->pc_epc = oldarea->pc_epc + 4;
+		AREA->pc_epc = AREA->pc_epc + 4;
 
 	#endif
 
 	//Ho un processo ancora attivo in cpu
 	if(ACTIVE_PCB != NULL){
 
-		termprint("Sys: carico processo in CPU \n");
+		termprint("Sys: ricarico processo in CPU \n");
 		
+		SaveOldState(AREA, &(ACTIVE_PCB->p_s));
 		LDST(&ACTIVE_PCB->p_s);
 
 	}
