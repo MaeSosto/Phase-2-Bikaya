@@ -41,6 +41,9 @@
         /* key of the semaphore on which the process is eventually blocked */
         int *p_semkey;
 
+        // campo command del pcb
+        int command;
+
 
         // timer di esecuzione
         unsigned int user_start;

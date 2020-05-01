@@ -172,7 +172,7 @@ void print(char *msg) {
         
         /*		PANIC(); */
 
-        termprint("stampato \n");
+        //termprint("stampato \n");
 
         if ((status & TERMSTATMASK) != TRANSM)
             PANIC();

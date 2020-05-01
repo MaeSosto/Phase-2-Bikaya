@@ -52,6 +52,8 @@ struct pcb_t *allocPcb(void){
     tempPcb->kernel_total=0;
     tempPcb->start_time=0;
     tempPcb->wallclock_start=0;
+
+	tempPcb->command=0;
 	#endif
 
 	#ifdef TARGET_UARM

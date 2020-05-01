@@ -29,10 +29,13 @@
     extern struct pcb_t *ACTIVE_PCB;
     extern struct pcb_t *GOODMORNING_PCB;
     #define TIME_SLICE 3000
-
+    #define TERMSTATMASK 0xFF
     #define CMD_ACK          1
 
 	void InterruptIntervalTimer();
     void InterruptTape();
+    void InterruptTerminal();
+
+    int getDevice(int line_no, int dev_no);
     
 #endif

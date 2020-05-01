@@ -1,6 +1,28 @@
 #include "include/interrupt.h"
 
+/* Interrupting devices bitmaps starting address: the actual bitmap address is
+   computed with INT_INTBITMAP_START + (WORD_SIZE * (int_no - 3)) */
+#define PENDING_BITMAP_START 0x1000003c
+
+/* Physical memory frame size */
+#define WORD_SIZE 4
+
+/* funzione per ottenere il bitmap corrente della linea di interrupt */
+#define INTR_CURRENT_BITMAP(LINENO)  (unsigned int *)(PENDING_BITMAP_START + (WORD_SIZE * (LINENO - 3)))
+
+
+void teminal_rec(){}
+
+void bp_terminal(){}
+void bp_it(){}
+void bp_disk(){}
+void bp_tape(){}
+void bp_network(){}
+void bp_printer(){}
+
 void InterruptIntervalTimer(){
+
+	bp_it();
 
 	//Setto il timer (ACK)
   	*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
@@ -65,14 +87,16 @@ void InterruptIntervalTimer(){
 
 void InterruptTape(){
 
-	termprint ("Interrupt: Gestisco l'int del tape ");
+	bp_tape();
+
+	//termprint ("Interrupt: Gestisco l'int del tape ");
 	//Per tutti i device di questa linea 
 	for(int i = 0; i < DEV_PER_INT; i++){
 
 		//Controllo se l'interrupt è stato lanciato da questa linea
 		if( ((CDEV_BITMAP_ADDR(INT_TAPE))) == i){
 
-			termprint("InterruptTape: gestisco il dispositivo \n ");
+			//termprint("InterruptTape: gestisco il dispositivo \n ");
 			stampaInt(i);
 			termprint("\n");
 			
@@ -82,7 +106,11 @@ void InterruptTape(){
 			//Faccio la verhogen = sblocco il processo, lo sveglio
 			Verhogen(Semaforo.tape[i].s_key);
 			GOODMORNING_PCB->p_s.reg_v0 = reg->status;
-			termprint("InterruptTape: Faccio ACK \n ");
+
+						
+			
+			
+			//termprint("InterruptTape: Faccio ACK \n ");
 			//Faccio ACK
 			reg->command = CMD_ACK;
 
@@ -92,5 +120,82 @@ void InterruptTape(){
 
 }
 
+void InterruptTerminal(){
+
+	bp_terminal();
+
+	//Per tutti i device di questa linea 
+	for(int i = 0; i < DEV_PER_INT; i++){
+
+		//Controllo se l'interrupt è stato lanciato da questa linea
+
+		if( getDevice(7,i)){
+			
+			//Prendo il registro del device che ha lanciato l'interrupt
+			termreg_t *reg = (termreg_t *)DEV_REG_ADDR(INT_TERMINAL, i);
+
+			//Controllo se il terminale è in trasmissione o ricezione
+
+			//Il terminale in RICEZIONE non è ready
+			if((reg->recv_status & TERMSTATMASK) != 1){
+				
+				if(*Semaforo.terminalR[i].s_key < 0){
+
+					//Sblocco il processo sul terminale in ricezione del device richiesto
+					Verhogen(Semaforo.terminalR[i].s_key);
+
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.reg_v0 = reg->recv_status;
+
+					
+					DO_IO(GOODMORNING_PCB->command, (unsigned int*)reg, TRUE);
+
+				}
+				
+				//Invio ACK
+				reg->recv_command = 1;
+				
+			}
+
+			//Il terminale in TRASMISSIONE non è ready
+			if((reg->transm_status & TERMSTATMASK)!= 1){
+
+				if(*Semaforo.terminalT[i].s_key < 0){
+					
+					teminal_rec();
+					
+					//Sblocco il processo sul terminale in ricezione del device richiesto
+					Verhogen(Semaforo.terminalT[i].s_key);
+
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.reg_v0 = reg->transm_status;
+					
+					ACTIVE_PCB = GOODMORNING_PCB;
+
+					DO_IO(GOODMORNING_PCB->command, (unsigned int*)reg, FALSE);
+				
+				}
+				
+				//Invio ACK
+				reg->transm_command = 1;
+				
+			}
+
+			
+
+		}
+	
+	}
+
+}
+
+//line_no ->7 terminale DEVICE - DA 3 A 7
+//dev_no -> DA 0 A 8
+int getDevice(int line_no, int dev_no){
+
+  if(*INTR_CURRENT_BITMAP(line_no) & (1 << dev_no))
+    return 1;
 
 
+  return 0;
+}

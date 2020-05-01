@@ -1,3 +1,4 @@
+
 #include "include/handler.h"
 
 #define INTERRUPT_PENDING_MASK     	0x0000ff00
@@ -52,7 +53,7 @@ void interruptHandler(){
 	//Interrupt 2 Interval Timer
 	else if(CAUSE_IP_GET(cause, INT_TIMER)){
 
-		termprint("Interrupt: 2 \n");
+		//termprint("Interrupt: 2 \n");
 		InterruptIntervalTimer();
 
 	}
@@ -67,7 +68,7 @@ void interruptHandler(){
 	//Interrupt 4 - Tape
 	else if(CAUSE_IP_GET(cause, INT_TAPE)){
 
-		termprint("Interrupt: 4 \n");
+		//termprint("Interrupt: 4 \n");
 		InterruptTape();
 	
 	}
@@ -89,8 +90,10 @@ void interruptHandler(){
 	//Interrupt 7- Terminal
 	else if(CAUSE_IP_GET(cause, INT_TERMINAL)){
 		
-		termprint("Interrupt: 7 \n");
-	
+		//termprint("Interrupt: 7 \n");
+
+		InterruptTerminal();
+
 	}
 
 	//NON SO
