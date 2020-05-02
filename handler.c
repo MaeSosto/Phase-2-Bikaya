@@ -1,6 +1,8 @@
 
 #include "include/handler.h"
 
+void bp_handler_DOIO(){}
+
 #define INTERRUPT_PENDING_MASK     	0x0000ff00
 #define INTERRUPT_PENDING_B      	8
 #define INTERRUPT_PENDING_FUNC(x)   (((x) & INTERRUPT_PENDING_MASK) >> INTERRUPT_PENDING_B)
@@ -178,7 +180,7 @@ void syscallHandler(){
 		//SYSCALL 4
 		else if(AREA->reg_a0 == VERHOGEN){
 
-			termprint("SYS 4 \n");
+			//termprint("SYS 4 \n");
 			//insert = TRUE;
 			Verhogen((int*)AREA->reg_a1);
 			
@@ -187,7 +189,7 @@ void syscallHandler(){
 		//SYSCALL 5
 		else if(AREA->reg_a0 == PASSEREN){
 			
-			termprint("SYS 5 \n");
+			//termprint("SYS 5 \n");
 			//insert = TRUE;
 			Passeren((int*)AREA->reg_a1);
 		
@@ -195,9 +197,11 @@ void syscallHandler(){
 
 		//SYSCALL 6
 		else if(AREA->reg_a0 == WAITIO){
-			
-			termprint("SYS 6 \n");
+
+			GOODMORNING_PCB=ACTIVE_PCB;	
+			//termprint("SYS 6 \n");
 			ritorno = DO_IO((unsigned int)AREA->reg_a1, (unsigned int*)AREA->reg_a2, (int)AREA->reg_a3);	
+			bp_handler_DOIO();
 			flag = 1;	
 
 		}
@@ -244,7 +248,7 @@ void syscallHandler(){
 	//Ho un processo ancora attivo in cpu
 	if(ACTIVE_PCB != NULL){
 
-		termprint("Sys: ricarico processo in CPU \n");
+		//termprint("Sys: ricarico processo in CPU \n");
 		
 		SaveOldState(AREA, &(ACTIVE_PCB->p_s));
 
@@ -270,7 +274,7 @@ void syscallHandler(){
 	//Non ho più processi attivi sulla cpu
 	else{
 
-		termprint("Sys: vado nello scheduler \n");
+		//termprint("Sys: vado nello scheduler \n");
 
 		//Chiamo lo scheduler
 		Scheduling();

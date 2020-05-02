@@ -20,6 +20,12 @@
  *      Modified by Mattia Maldini, Renzo Davoli 2020
  */
 
+void bp_status1(){}
+void bp_status2(){}
+void bp_status3(){}
+void bp_status4(){}
+void bp_status5(){}
+
 #ifdef TARGET_UMPS
 #include "umps/libumps.h"
 #include "umps/arch.h"
@@ -173,6 +179,23 @@ void print(char *msg) {
         /*		PANIC(); */
 
         //termprint("stampato \n");
+        if((status & TERMSTATMASK) == 1){
+            bp_status1();        
+        }
+        if((status & TERMSTATMASK) == 2){
+            bp_status2();
+        }
+        if((status & TERMSTATMASK) == 3){
+            bp_status3();
+        }
+        if((status & TERMSTATMASK) == 4){
+            bp_status4();
+        }
+        if((status & TERMSTATMASK) == 5){
+            
+        }else{
+            bp_status5();
+        }
 
         if ((status & TERMSTATMASK) != TRANSM)
             PANIC();
@@ -182,7 +205,7 @@ void print(char *msg) {
         if (((status & TERMCHARMASK) >> BYTELEN) != *s)
             PANIC();
 
-        //termprint("Secondo panic ciaone \n");
+       
         
         s++;
     }

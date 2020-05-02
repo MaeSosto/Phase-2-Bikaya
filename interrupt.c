@@ -129,7 +129,7 @@ void InterruptTerminal(){
 
 		//Controllo se l'interrupt è stato lanciato da questa linea
 
-		if( getDevice(7,i)){
+		if(getDevice(7,i)){
 			
 			//Prendo il registro del device che ha lanciato l'interrupt
 			termreg_t *reg = (termreg_t *)DEV_REG_ADDR(INT_TERMINAL, i);
@@ -147,13 +147,15 @@ void InterruptTerminal(){
 					//Aggiorno lo status del processo svegliato
 					GOODMORNING_PCB->p_s.reg_v0 = reg->recv_status;
 
-					
 					DO_IO(GOODMORNING_PCB->command, (unsigned int*)reg, TRUE);
 
 				}
+				else{
 				
-				//Invio ACK
-				reg->recv_command = 1;
+					//Invio ACK
+					reg->recv_command = 1;
+				
+				}
 				
 			}
 
@@ -172,12 +174,19 @@ void InterruptTerminal(){
 					
 					ACTIVE_PCB = GOODMORNING_PCB;
 
+					
+   
 					DO_IO(GOODMORNING_PCB->command, (unsigned int*)reg, FALSE);
 				
 				}
 				
+				else{
+
 				//Invio ACK
 				reg->transm_command = 1;
+				
+				}
+				
 				
 			}
 
