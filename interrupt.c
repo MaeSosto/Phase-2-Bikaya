@@ -20,6 +20,8 @@ void bp_tape(){}
 void bp_network(){}
 void bp_printer(){}
 
+extern int tempo;
+
 void InterruptIntervalTimer(){
 
 	bp_it();
@@ -27,26 +29,7 @@ void InterruptIntervalTimer(){
 	//Setto il timer (ACK)
   	*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
 
-
-	//Ho già un processo attivo
-	if(ACTIVE_PCB != NULL){
-
-		//Tornare in user mode
-
-		//Salvo i registri dell'old area dell'interrupt al processo
-		struct state *AREA=(state_t *) INT_OLDAREA;
-
-		/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
-		SaveOldState(AREA, &(ACTIVE_PCB->p_s));
-		
-	}
-
-	//Non ho processi in esecuzione
-	else{
-
-		//Riparto con lo scheduler
-
-	}
+	tempo = TRUE;
 
 }
 
@@ -84,7 +67,7 @@ void InterruptIntervalTimer(){
 // }
 
 
-
+//TAPE 4
 void InterruptTape(){
 
 	bp_tape();
@@ -120,6 +103,7 @@ void InterruptTape(){
 
 }
 
+//TERMINAL 7
 void InterruptTerminal(){
 
 	bp_terminal();
@@ -133,6 +117,8 @@ void InterruptTerminal(){
 			
 			//Prendo il registro del device che ha lanciato l'interrupt
 			termreg_t *reg = (termreg_t *)DEV_REG_ADDR(INT_TERMINAL, i);
+			
+			//QUA LO STATUS È CHARACTER RECEIVED = 5
 
 			//Controllo se il terminale è in trasmissione o ricezione
 
@@ -174,16 +160,14 @@ void InterruptTerminal(){
 					
 					ACTIVE_PCB = GOODMORNING_PCB;
 
-					
-   
-					DO_IO(GOODMORNING_PCB->command, (unsigned int*)reg, FALSE);
+					//DO_IO(GOODMORNING_PCB->command, (unsigned int*)reg, FALSE);
 				
 				}
 				
 				else{
 
-				//Invio ACK
-				reg->transm_command = 1;
+					//Invio ACK
+					reg->transm_command = 1;
 				
 				}
 				

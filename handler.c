@@ -3,11 +3,15 @@
 
 void bp_handler_DOIO(){}
 
+void bp_hadler_term(){}
+
 #define INTERRUPT_PENDING_MASK     	0x0000ff00
 #define INTERRUPT_PENDING_B      	8
 #define INTERRUPT_PENDING_FUNC(x)   (((x) & INTERRUPT_PENDING_MASK) >> INTERRUPT_PENDING_B)
 
 #define INT_IP_GET(cause) ((cause >> 8) & 0xFF)
+
+int tempo=FALSE;
 
 //Gestore degli interrupt
 void interruptHandler(){
@@ -108,9 +112,45 @@ void interruptHandler(){
 	//Inviamo ACK a CP0
   	//*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
 
+	//Non ho processi attivi in cpu
+	if((tempo) | (ACTIVE_PCB==NULL)){
+		
+		if(ACTIVE_PCB != NULL){
+			//Salvo i registri dell'old area dell'interrupt al processo
+			struct state *AREA=(state_t *) INT_OLDAREA;
 
-	//Richiamo lo scheduler
-	Scheduling();
+			/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
+			SaveOldState(AREA, &(ACTIVE_PCB->p_s));
+		}
+
+
+		//Richiamo lo scheduler
+		Scheduling();
+
+	}
+
+
+	//Controllo se ho processi attivi
+	else if(ACTIVE_PCB != NULL){
+		
+		bp_hadler_term();
+		
+		// //Torno in user mode, così non si sollevano altri interrupt tranne quello del tempo
+		// setSTATUS(getSTATUS() & ~STATUS_IM_MASK);
+		// setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IM(2));
+
+		// // //setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IEp | STATUS_IM(2));
+
+		// bp_hadler_term();
+
+		// //Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato
+		// SaveOldState(AREA, &(ACTIVE_PCB->p_s));
+
+		bp_hadler_term();
+
+		LDST(&ACTIVE_PCB->p_s);
+
+	}
 
 }
 
@@ -275,7 +315,7 @@ void syscallHandler(){
 	else{
 
 		//termprint("Sys: vado nello scheduler \n");
-
+		
 		//Chiamo lo scheduler
 		Scheduling();
 	
