@@ -1,0 +1,90 @@
+# Cross toolchain variables
+# If these are not in your path, you can make them absolute.
+XT_PRG_PREFIX = mipsel-linux-gnu-
+#XT_PRG_PREFIX = ~/x-tools/mipsel-unknown-linux-gnu/bin/mipsel-unknown-linux-gnu-
+CC = $(XT_PRG_PREFIX)gcc
+LD = $(XT_PRG_PREFIX)ld
+
+# uMPS2-related paths
+UMPS2_DIR = ./umps
+INCLUDE_DIR = ./include
+
+# Simplistic search for the umps2 install. prefix. If you have umps2
+# installed on some weird location, set UMPS2_DIR_PREFIX by hand.
+ifneq ($(wildcard /usr/bin/umps2),)
+    UMPS2_DIR_PREFIX = /usr
+else
+    UMPS2_DIR_PREFIX = /usr/local
+endif
+
+#Data and include paths
+ifneq ($(wildcard $(UMPS2_DIR_PREFIX)/lib/umps2),)
+    UMPS2_LIB_DIR = $(UMPS2_DIR_PREFIX)/lib/umps2
+else
+    UMPS2_LIB_DIR = /usr/lib/x86_64-linux-gnu/umps2
+endif
+
+UMPS2_INCLUDE_DIR = $(UMPS2_DIR_PREFIX)/include/umps2
+
+# Compiler options
+CFLAGS_LANG = -ffreestanding -DTARGET_UMPS=1
+CFLAGS_MIPS = -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32
+CFLAGS = $(CFLAGS_LANG) $(CFLAGS_MIPS) -I$(UMPS2_DIR) -I$(INCLUDE_DIR) -I$(UMPS2_INCLUDE_DIR) -Wall -O0
+
+#Objects paths
+CRTSO_PATH = $(UMPS2_LIB_DIR)/crtso.o
+LIBUMPS_PATH = $(UMPS2_LIB_DIR)/libumps.o
+UMPSCORE_PATH = $(UMPS2_DATA_DIR)/umpscore.ldscript
+
+# Linker options
+LDFLAGS = -G 0 -nostdlib -T /usr/local/share/umps2/umpscore.ldscript
+
+# Add the location of crt*.S to the search path
+VPATH = $(UMPS2_DIR)
+
+.PHONY : all clean
+
+all : kernel.core.umps
+
+utils.o : utils.c include/utils.h
+	$(CC) -c $(CFLAGS) $<
+
+syscall.o : syscall.c include/syscall.h
+	$(CC) -c $(CFLAGS) $<
+
+interrupt.o : interrupt.c include/interrupt.h
+	$(CC) -c $(CFLAGS) $<
+
+scheduler.o : scheduler.c include/scheduler.h
+	$(CC) -c $(CFLAGS) $<
+
+handler.o : handler.c include/handler.h
+	$(CC) -c $(CFLAGS) $<
+
+kernel.o : kernel.c 
+	$(CC) -c $(CFLAGS) $<
+
+pcb.o : pcb.c include/pcb.h
+	$(CC) -c $(CFLAGS) $<
+
+asl.o : asl.c include/asl.h
+	$(CC) -c $(CFLAGS) $<
+
+p2test_bikaya_v0.1.o : p2test_bikaya_v0.1.c
+	$(CC) -c $(CFLAGS) $<
+
+p1.5test_bikaya_v0.o : p1.5test_bikaya_v0.c
+	$(CC) -c $(CFLAGS) $<
+
+kernel.core.umps : kernel
+	umps2-elf2umps -k $<
+
+kernel : pcb.o asl.o utils.o syscall.o interrupt.o scheduler.o kernel.o handler.o p2test_bikaya_v0.1.o p1.5test_bikaya_v0.o
+	$(LD) -o $@ $^ $(CRTSO_PATH) $(LIBUMPS_PATH) $(LDFLAGS)
+
+clean :
+	-rm -f *.o
+
+# Pattern rule for assembly modules
+%.o : %.S
+	$(CC) $(CFLAGS) -c -o $@ $<
