@@ -13,8 +13,8 @@
 
 void teminal_rec(){}
 
-void bp_terminal(){}
-void bp_it(){}
+void bp_interrupt_terminal(){}
+void bp_interrupt_timer(){}
 void bp_disk(){}
 void bp_tape(){}
 void bp_network(){}
@@ -24,7 +24,7 @@ extern int tempo;
 
 void InterruptIntervalTimer(){
 
-	bp_it();
+	bp_interrupt_timer();
 
 	//Setto il timer (ACK)
   	*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
@@ -106,7 +106,7 @@ void InterruptTape(){
 //TERMINAL 7
 void InterruptTerminal(){
 
-	bp_terminal();
+	bp_interrupt_terminal();
 
 	//Per tutti i device di questa linea 
 	for(int i = 0; i < DEV_PER_INT; i++){

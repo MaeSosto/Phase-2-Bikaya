@@ -1,53 +1,4 @@
-#include "include/handler.h"
 #include "include/utils.h"
-#include "include/pcb.h"
-#include "include/types_bikaya.h"
-#include "include/const_bikaya.h"
-
-#ifdef TARGET_UMPS
-
-  #include <umps/cp0.h>
-  #include <umps/types.h>
-  #include <umps/libumps.h>
-  #include <umps/arch.h>
-
-  //DEFINE
-  #define FRAMESIZE 4096
-  #define RAMBASE    *((unsigned int *)BUS_REG_RAM_BASE)
-  #define RAMSIZE    *((unsigned int *)BUS_REG_RAM_SIZE)
-  #define RAMTOP     (RAMBASE + RAMSIZE) //-> presa da test1.5 bikaya
-
-  //NEW-OLD AREA UMPS
-  #define SYSCALL_NEWAREA 0x200003D4
-  #define SYSCALL_OLDAREA 0x20000348
-  #define TRAP_NEWAREA 0x200002BC
-  #define TLB_NEWAREA 0x200001A4
-  #define INTERRUPT_NEWAREA 0x2000008C
-  #define INTERRUPT_OLDAREA 0x20000000
-
-  //Numero massimo di linee/device che posso avere
-  #define MAX_DEVICES (DEV_USED_INTS * DEV_PER_INT) + DEV_PER_INT + 1
-
-#endif
-
-#ifdef TARGET_UARM
-
-  #include <uarm/arch.h>
-  #include <uarm/uARMtypes.h>
-  #include <uarm/uARMconst.h>
-  #include <uarm/libuarm.h>
-
-#endif
-
-#define BUS_TODLOW  0x1000001c
-#define BUS_TODHIGH 0x10000018
-#define getTODLO() (*((unsigned int *)BUS_TODLOW))
-
-extern struct pcb_t *ACTIVE_PCB;
-extern struct list_head* ready_queue;
-extern struct device_semd Semaforo;
-extern int SemMem[MAX_DEVICES];
-extern void termprint(char *str);
 
 //Inizializzo le Areas
 void setAreas(){
@@ -157,7 +108,7 @@ struct pcb_t *initAllPCB(unsigned int functionAddress, int priority){
 
 	tempPcb->priority = n;
 	tempPcb->original_priority = n;
-  tempPcb->wallclock_start=getTODLO();
+  	tempPcb->wallclock_start=getTODLO();
 	return tempPcb;
   
 }
@@ -211,21 +162,22 @@ void SaveOldState(state_t* oldarea, state_t* processo){
 void InitSemd(){
 
 	//inizializzo a 0 le celle della matrice che gestisce i semd
-	for(int i=0; i<MAX_DEVICES; i++){
+	for(int i=0; i<MAX_SEM; i++){
 
 		SemMem[i] = 0;
 
 	}
 
   //Assegno gli indirizzi di memoria ai registri dei device
-	for(int i=0; i<DEV_PER_INT; i++){
+	for(int i=0; i<9; i++){
 		
 		Semaforo.disk[i].s_key = &SemMem[i]; //Da 0 a 7
 		Semaforo.tape[i].s_key = &SemMem[i+DEV_PER_INT]; //Da 8 a 15
 		Semaforo.network[i].s_key = &SemMem[i+2*DEV_PER_INT]; //Da 16 a 23
 		Semaforo.printer[i].s_key = &SemMem[i+3*DEV_PER_INT]; //Da 24 a 31
-		Semaforo.terminal[i].s_key = &SemMem[i+4*DEV_PER_INT]; //Da 32 a 39
-		
+		Semaforo.terminalR[i].s_key = &SemMem[i+4*DEV_PER_INT]; //Da 32 a 39
+		Semaforo.terminalT[i].s_key = &SemMem[i+5*DEV_PER_INT]; //Da 40 a 47
+
 	}
 
 }

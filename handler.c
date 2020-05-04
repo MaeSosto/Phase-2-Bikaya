@@ -22,7 +22,7 @@ void interruptHandler(){
 	//ACTIVE_PCB->kernel_start = getTODLO();
 
 
-	//Salvo i registri dell'old area dell'interrupt al processo
+	//Prendo l' old area dell'interrupt al processo
 	struct state *AREA=(state_t *) INT_OLDAREA;
 
 	//*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
@@ -135,21 +135,27 @@ void interruptHandler(){
 		
 		bp_hadler_term();
 		
-		// //Torno in user mode, così non si sollevano altri interrupt tranne quello del tempo
-		// setSTATUS(getSTATUS() & ~STATUS_IM_MASK);
-		// setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IM(2));
+		//Torno in user mode, così non si sollevano altri interrupt tranne quello del tempo
+		
+		
 
-		// // //setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IEp | STATUS_IM(2));
+		//setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IEp | STATUS_IM(2));
 
 		// bp_hadler_term();
 
 		// //Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato
-		// SaveOldState(AREA, &(ACTIVE_PCB->p_s));
+		
+		struct state *AREA=(state_t *) INT_OLDAREA;
+		SaveOldState(AREA, &(ACTIVE_PCB->p_s));
 
-		bp_hadler_term();
+		//setSTATUS(getSTATUS() & ~STATUS_IM_MASK);
+		//setSTATUS(getSTATUS() & ~STATUS_IEc | STATUS_IM(2));
 
-		LDST(&ACTIVE_PCB->p_s);
+		//bp_hadler_term();
 
+		//LDST(&ACTIVE_PCB->p_s);
+
+		Scheduling();
 	}
 
 }
@@ -172,6 +178,8 @@ void syscallHandler(){
 
 	struct state *AREA = (state_t *) SYSBK_OLDAREA;
 	
+	
+
   	#ifdef TARGET_UMPS
 
 		//Accedo alla Old Area della system call
@@ -232,7 +240,7 @@ void syscallHandler(){
 			//termprint("SYS 5 \n");
 			//insert = TRUE;
 			Passeren((int*)AREA->reg_a1);
-		
+
 		}
 
 		//SYSCALL 6
@@ -320,6 +328,7 @@ void syscallHandler(){
 		Scheduling();
 	
 	}
+
 }
 
 //Gestore delle trap

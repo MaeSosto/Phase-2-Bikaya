@@ -1,39 +1,18 @@
-#include "include/types_bikaya.h"
-#include "include/listx.h"
-#include "include/pcb.h"
-#include "include/asl.h"
-#include "include/utils.h"
-#include "include/const_bikaya.h"
+#include "include/syscall.h"
+
+#define TERMSTATMASK 0xFF
 
 
-#ifdef TARGET_UMPS
 
-	#include <umps/libumps.h> 
-    #include <umps/types.h>
-    #include <umps/arch.h>
-    #define MAX_DEVICES (DEV_USED_INTS * DEV_PER_INT) + DEV_PER_INT + 1
 
-#endif
 
-#ifdef TARGET_UARM
+// void bp_status1(){}
+// void bp_status2(){}
+// void bp_status3(){}
+// void bp_status4(){}
+// void bp_status5(){}
 
-    #include <uarm/arch.h>
-    #include <uarm/uARMtypes.h>
-    #include <uarm/uARMconst.h>
-
-#endif
-
-extern struct pcb_t *ACTIVE_PCB;
-extern struct list_head* ready_queue;
-extern struct device_semd Semaforo;
-extern int SemMem[MAX_DEVICES];
-extern void termprint(char *str);
-extern int insert;
-
-#define BUS_TODLOW  0x1000001c
-#define BUS_TODHIGH 0x10000018
-#define getTODLO() (*((unsigned int *)BUS_TODLOW))
-
+bp_passaren_end(){}
 
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){
@@ -183,14 +162,27 @@ void Verhogen(int *semaddr){
     //Incremento il semaforo
     *semaddr+=1;
 
-	// Controlo se ho 1 o più thread nella lista d'attesa
-	if (*semaddr <= 0){
-       
+	// Controllo se ho più thread nella lista d'attesa
+	if (*semaddr <= 0){      
+        
         //Prendo il primo processo messo in attesa
-	 	pcb_t* pcb_blocked = removeBlocked(semaddr);
+	    pcb_t* pcb_blocked = removeBlocked(semaddr);
+
+        //Aggiorno il contatore dei processi bloccati
+        BLOCK_COUNT--;
+        
+        
+        //Mi salvo il processo che ho appena svegliato per poi aggiornare il suo status quando lo sbloccherò
+        GOODMORNING_PCB = pcb_blocked;
 
         //Rimetto la priorità originale del semaforo
-	 	pcb_blocked->priority = pcb_blocked->original_priority;
+	 	//pcb_blocked->priority = pcb_blocked->original_priority;
+
+        //Salvo i registri dell'old area della sys al processo 
+        //state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
+
+        //Copio lo stato della old area della sys nel processo che lo ha sollevato 
+        //SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
 
         //Inserisco il processo nella ready queue
         insertProcQ(ready_queue, pcb_blocked);
@@ -234,6 +226,14 @@ void Passeren(int *semaddr){
         //Metto il processo nella coda del semaforo
 	 	int ret = insertBlocked(semaddr, ACTIVE_PCB);
         
+        //Aggiorno il contatore dei processi bloccati
+        BLOCK_COUNT ++;
+        
+        // L'ACTIVE PCB VA MESSO A NULL ALLA FINE DELLA SYSCALL PRIMA DI CHIAMARE LO SCHEDULER
+        ACTIVE_PCB = NULL;
+
+        bp_passaren_end();
+
         //assegnamento al semd NON andato a buon fine
         if(ret){
 
@@ -241,10 +241,7 @@ void Passeren(int *semaddr){
         
         }
      
-    }
-
-    // L'ACTIVE PCB VA MESSO A NULL ALLA FINE DELLA SYSCALL PRIMA DI CHIAMARE LO SCHEDULER
-    ACTIVE_PCB = NULL;
+    }    
 
 }
 
@@ -264,21 +261,22 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
     // // sta facendo riferimento nel caso in cui si voglia
     // // portare avanti un’operazione su un terminale. 0
     // // corrisponde alla trasmissione, 1 alla ricezione.
+
+    //if(ACTIVE_PCB != NULL){
+        
+       // ACTIVE_PCB->command=command;
+
+    //}
     
+    
+    int *sem;
     int dev = 0;
     int line = 0;
     int status = 0;
 
-    dev = numDev(registro);
-    line = numLine(registro);
+    dev = numDev((unsigned int *)registro);
+    line = numLine((unsigned int *)registro);
 
-    //Blocco il processo 
-    if(line == 3)         Passeren(Semaforo.disk[dev].s_key);
-    else if(line == 4)    Passeren(Semaforo.tape[dev].s_key);
-    else if(line == 5)    Passeren(Semaforo.network[dev].s_key);
-    else if(line == 6)    Passeren(Semaforo.printer[dev].s_key);
-    else if(line == 7)    Passeren(Semaforo.terminal[dev].s_key);
-    
     // termprint("La linea e': ");
     // stampaInt(line);
     // termprint("\nIl device e': ");
@@ -288,10 +286,22 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
     //Non è un terminale
     if(line < 7){
         
+        //Blocco il processo 
+        if(line == 3)        sem = Semaforo.disk[dev].s_key;
+        else if(line == 4)    sem = Semaforo.tape[dev].s_key;
+        else if(line == 5)    sem = Semaforo.network[dev].s_key;
+        else if(line == 6)    sem = Semaforo.printer[dev].s_key;
+        
         dtpreg_t *devreg = (dtpreg_t *) registro;
-        devreg->command = command;
+
+        if(!*sem){
+
+            devreg->command = command;
+
+        }
+        
         status = devreg->status;
-        termprint ("Setto lo status 1 \n");
+        //termprint ("Setto lo status 1 \n");
 
     }
 
@@ -303,49 +313,68 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
         //Trasmissione
         if(subdevice == FALSE){
 
-            status = termreg->transm_status;
-            termprint ("Setto lo status 2 \n");
-            termreg->transm_command = command;
+            //Blocco il processo 
+            sem = Semaforo.terminalT[dev].s_key;
 
+            
+            //La prima volta che entra inuna DoIO il dispositivo è ready, in quel caso non prendo il comando 
+            if(!*sem){ //Entra qua se il contenuto di sem è 0, ovvero se non ci sono processi bloccati su quel semaforo
+
+                termreg->transm_command = command;
+            
+            }
+         
+
+            status = termreg->transm_status;
 
         }
+
         //Ricezione
         else{
+
+
+            /*dai nostri amici trattino         
+            - richiesta di I/O su un terminale in trasmissione, si scrive il comando nel campo transm_command
+            - semaforo con valore 1, terminale libero in trasmissione
+            */
+            //Blocco il processo 
+            sem = Semaforo.terminalR[dev].s_key;
             
+            if(!*sem){ //Entra qua se il contenuto di sem è 0, ovvero se non ci sono processi bloccati su quel semaforo
+
+                termreg->recv_command = command;
+         
+            }
+     
+
             status = termreg->recv_status;
-            termprint ("Setto lo status 3 \n");
-            termreg->recv_command = command;
-           
-            
+                                   
         }
        
     }
 
+    //Qua sto venendo da una sys
+    if(GOODMORNING_PCB == ACTIVE_PCB){
+        
+        Passeren(sem);
+        //Dopo la passeren l'active pcb è a null, gli riassegno il processo svegliato
+        //ACTIVE_PCB = GOODMORNING_PCB;
 
-    // //il processo che richiede I/O va bloccato
-	// if(wakeup_proc == curr_proc){
-	// 		Passeren(semaddr);
-	// }
-	// else{
-	// 	/*se il processo ad aver chiamato la Do_IO è il processo risvegliato dopo un'operazione di I/O
-	// 	allora non si richiama lo scheduler dopo aver fatto la P perciò non utilizzo la Passeren*/
-	// 	(*semaddr)--;
-	// 	ProcBlocked++;
-	// 	insertBlocked(semaddr, wakeup_proc);
-	// 	outProcQ(&ready_queue_h, wakeup_proc);
-	// }
+    }
+            
+    
+    //Qua vengo da un interrupt 
+    else{
+
+        Passeren(sem);
+        outProcQ(ready_queue, GOODMORNING_PCB);        
+        
+    }
 
 
-    // insert = TRUE;
 
-    // if(insert){
-
-    //     //Salvo il processo corrente e lo rimetto nella ready queue
-	//     SaveProc();
-    //     termprint("Salvo nella do_io \n");
-
-    // }
-
+    //Qua lo status è BUSY
+    
     return status;
 }
 

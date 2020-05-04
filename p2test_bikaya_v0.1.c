@@ -164,6 +164,8 @@ void print(char *msg) {
 
     SYSCALL(PASSEREN, (int)&term_mut, 0, 0); /* get term_mut lock */
 
+    bp_test_prof();
+    
     while (*s != '\0') {
         /* Put "transmit char" command+char in term0 register (3rd word). This
                  actually starts the operation on the device! */
