@@ -5,79 +5,88 @@ void setAreas(){
 
   #ifdef TARGET_UMPS
 
-    state_t *SYSCALL = (state_t*) SYSCALL_NEWAREA;
+	state_t *SYSCALL = (state_t*) SYSCALL_NEWAREA;
     SYSCALL->pc_epc = (unsigned int)syscallHandler;
     SYSCALL->reg_sp = RAMTOP; 
-    SYSCALL->status = SYSCALL->status | STATUS_IEc;    
-    SYSCALL->status = SYSCALL->status & ~STATUS_KUc;
-    SYSCALL->status = SYSCALL->status | STATUS_IEp;
-    SYSCALL->status = SYSCALL->status & ~STATUS_IM_MASK;
-    SYSCALL->status = SYSCALL->status & ~STATUS_VMc;
+    //settiamo i bit a 0
+	SYSCALL->status = SYSCALL->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
+    SYSCALL->status = SYSCALL->status & ~STATUS_IEp;		//disabilito IEp
+	SYSCALL->status = SYSCALL->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
+	SYSCALL->status = SYSCALL->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
+    //SYSCALL->status = SYSCALL->status | STATUS_IEp;
+    SYSCALL->status = SYSCALL->status & ~STATUS_VMc;		//disabilito virtual memory OK
+	SYSCALL->status = SYSCALL->status | STATUS_CU0;			//abilito il 28-esimo bit CU[0]
 
     state_t *TRAP = (state_t*) TRAP_NEWAREA;
     TRAP->pc_epc = (unsigned int)trapHandler;
     TRAP->reg_sp = RAMTOP; 
-    TRAP->status = SYSCALL->status | STATUS_IEc;    
-    TRAP->status = TRAP->status & ~STATUS_KUc;
-    TRAP->status = TRAP->status | STATUS_IEp;
-    TRAP->status = TRAP->status & ~STATUS_IM_MASK;
-    TRAP->status = TRAP->status & ~STATUS_VMc;
+    TRAP->status = TRAP->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
+    TRAP->status = TRAP->status & ~STATUS_IEp;		//disabilito IEp
+	TRAP->status = TRAP->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
+	TRAP->status = TRAP->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
+    //TRAP->status = TRAP->status | STATUS_IEp;
+    TRAP->status = TRAP->status & ~STATUS_VMc;		//disabilito virtual memory OK
+	TRAP->status = TRAP->status | STATUS_CU0;
     
     state_t *TLB = (state_t*) TLB_NEWAREA;
     TLB->pc_epc = (unsigned int)tlbHandler;
     TLB->reg_sp = RAMTOP; 
-    TLB->status = TLB->status | STATUS_IEc;    
-    TLB->status = TLB->status & ~STATUS_KUc;
-    TLB->status = TLB->status | STATUS_IEp;
-    TLB->status = TLB->status & ~STATUS_IM_MASK;
-    TLB->status = TLB->status & ~STATUS_VMc;
+    TLB->status = TLB->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
+    TLB->status = TLB->status & ~STATUS_IEp;		//disabilito IEp
+	TLB->status = TLB->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
+	TLB->status = TLB->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
+    //TLB->status = TLB->status | STATUS_IEp;
+    TLB->status = TLB->status & ~STATUS_VMc;		//disabilito virtual memory OK
+	TLB->status = TLB->status | STATUS_CU0;
     
     state_t *INTERRUPT = (state_t*) INTERRUPT_NEWAREA;
     INTERRUPT->pc_epc = (unsigned int)interruptHandler;
     INTERRUPT->reg_sp = RAMTOP; 
-    INTERRUPT->status = INTERRUPT->status | STATUS_IEc;    
-    INTERRUPT->status = INTERRUPT->status & ~STATUS_KUc;
-    INTERRUPT->status = INTERRUPT->status | STATUS_IEp;
-    INTERRUPT->status = INTERRUPT->status & ~STATUS_IM_MASK;
-    INTERRUPT->status = INTERRUPT->status & ~STATUS_VMc;
+    INTERRUPT->status = INTERRUPT->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
+    INTERRUPT->status = INTERRUPT->status & ~STATUS_IEp;		//disabilito IEp
+	INTERRUPT->status = INTERRUPT->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
+	INTERRUPT->status = INTERRUPT->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
+    //INTERRUPTLB->status = TLB->status | STATUS_IEp;
+    INTERRUPT->status = INTERRUPT->status & ~STATUS_VMc;		//disabilito virtual memory OK
+	INTERRUPT->status = INTERRUPT->status | STATUS_CU0;
 
   #endif
   
-  #ifdef TARGET_UARM
+//   #ifdef TARGET_UARM
 
-    state_t *SYSCALL = (state_t*) SYSBK_NEWAREA;
-    SYSCALL->pc = (unsigned int)syscallHandler;  //assegno la funzione che gestisce la syscall
-    SYSCALL->sp = RAM_TOP;  //setto ramtop
-    SYSCALL->cpsr = STATUS_DISABLE_INT(SYSCALL->cpsr); //Disabilito gli interrupt
-    SYSCALL->cpsr = STATUS_DISABLE_TIMER(SYSCALL->cpsr);
-    SYSCALL->cpsr = SYSCALL->cpsr | STATUS_SYS_MODE; 
-    SYSCALL->CP15_Control = CP15_DISABLE_VM(SYSCALL->CP15_Control); //disabilito virtual memory
+//     state_t *SYSCALL = (state_t*) SYSBK_NEWAREA;
+//     SYSCALL->pc = (unsigned int)syscallHandler;  //assegno la funzione che gestisce la syscall
+//     SYSCALL->sp = RAM_TOP;  //setto ramtop
+//     SYSCALL->cpsr = STATUS_DISABLE_INT(SYSCALL->cpsr); //Disabilito gli interrupt
+//     SYSCALL->cpsr = STATUS_DISABLE_TIMER(SYSCALL->cpsr);
+//     SYSCALL->cpsr = SYSCALL->cpsr | STATUS_SYS_MODE; 
+//     SYSCALL->CP15_Control = CP15_DISABLE_VM(SYSCALL->CP15_Control); //disabilito virtual memory
 
-    state_t *TRAP = (state_t*) PGMTRAP_NEWAREA;
-    TRAP->pc = (unsigned int)trapHandler;
-    TRAP->sp = RAM_TOP;
-    TRAP->cpsr = STATUS_DISABLE_INT(TRAP->cpsr);
-    TRAP->cpsr = STATUS_DISABLE_TIMER(TRAP->cpsr);
-    TRAP->cpsr = TRAP->cpsr | STATUS_SYS_MODE; 
-    TRAP->CP15_Control = CP15_DISABLE_VM(TRAP->CP15_Control);
+//     state_t *TRAP = (state_t*) PGMTRAP_NEWAREA;
+//     TRAP->pc = (unsigned int)trapHandler;
+//     TRAP->sp = RAM_TOP;
+//     TRAP->cpsr = STATUS_DISABLE_INT(TRAP->cpsr);
+//     TRAP->cpsr = STATUS_DISABLE_TIMER(TRAP->cpsr);
+//     TRAP->cpsr = TRAP->cpsr | STATUS_SYS_MODE; 
+//     TRAP->CP15_Control = CP15_DISABLE_VM(TRAP->CP15_Control);
 
-    state_t *TLB = (state_t*) TLB_NEWAREA;
-    TLB->pc = (unsigned int)tlbHandler;
-    TLB->sp = RAM_TOP;
-    TLB->cpsr = STATUS_DISABLE_INT(TLB->cpsr);
-    TLB->cpsr = STATUS_DISABLE_TIMER(TLB->cpsr);
-    TLB->cpsr = TLB->cpsr | STATUS_SYS_MODE; 
-    TLB->CP15_Control = CP15_DISABLE_VM(TLB->CP15_Control);
+//     state_t *TLB = (state_t*) TLB_NEWAREA;
+//     TLB->pc = (unsigned int)tlbHandler;
+//     TLB->sp = RAM_TOP;
+//     TLB->cpsr = STATUS_DISABLE_INT(TLB->cpsr);
+//     TLB->cpsr = STATUS_DISABLE_TIMER(TLB->cpsr);
+//     TLB->cpsr = TLB->cpsr | STATUS_SYS_MODE; 
+//     TLB->CP15_Control = CP15_DISABLE_VM(TLB->CP15_Control);
 
-    state_t *INTERRUPT = (state_t*) INT_NEWAREA;
-    INTERRUPT->pc = (unsigned int)interruptHandler;
-    INTERRUPT->sp = RAM_TOP;
-    INTERRUPT->cpsr = STATUS_DISABLE_INT(INTERRUPT->cpsr);
-    INTERRUPT->cpsr = STATUS_DISABLE_TIMER(INTERRUPT->cpsr);
-    INTERRUPT->cpsr = INTERRUPT->cpsr | STATUS_SYS_MODE; 
-    INTERRUPT->CP15_Control = CP15_DISABLE_VM(INTERRUPT->CP15_Control);
+//     state_t *INTERRUPT = (state_t*) INT_NEWAREA;
+//     INTERRUPT->pc = (unsigned int)interruptHandler;
+//     INTERRUPT->sp = RAM_TOP;
+//     INTERRUPT->cpsr = STATUS_DISABLE_INT(INTERRUPT->cpsr);
+//     INTERRUPT->cpsr = STATUS_DISABLE_TIMER(INTERRUPT->cpsr);
+//     INTERRUPT->cpsr = INTERRUPT->cpsr | STATUS_SYS_MODE; 
+//     INTERRUPT->CP15_Control = CP15_DISABLE_VM(INTERRUPT->CP15_Control);
 
-  #endif
+//   #endif
 }
 
 //Inizializzo i Pcb
@@ -85,13 +94,21 @@ struct pcb_t *initAllPCB(unsigned int functionAddress, int priority){
 	
 	int n = priority;
 	struct pcb_t *tempPcb = allocPcb();
-	
+
 	#ifdef TARGET_UMPS  
-		tempPcb->p_s.status = tempPcb->p_s.status | STATUS_IEp;
+		//bit a 1
+		tempPcb->p_s.status = tempPcb->p_s.status | STATUS_IEp;		//abilito IEp
 		tempPcb->p_s.status = tempPcb->p_s.status | STATUS_IEc;
-		tempPcb->p_s.status = tempPcb->p_s.status & ~STATUS_KUp;
-		tempPcb->p_s.status = tempPcb->p_s.status & ~STATUS_VMp;
-		tempPcb->p_s.status = tempPcb->p_s.status | STATUS_IM(2);
+		tempPcb->p_s.status = tempPcb->p_s.status | STATUS_IM_MASK;	//abilito la maschera
+		tempPcb->p_s.status = tempPcb->p_s.status | STATUS_CU0;		//abilito il 28-esimo bit CU[0]
+		tempPcb->p_s.status = tempPcb->p_s.status | STATUS_IM(2);	//abilito l'interrupt del timer
+
+		//bit a 0
+		tempPcb->p_s.status = tempPcb->p_s.status & ~STATUS_KUc;	//abilito kernel mode KUc = 0
+		tempPcb->p_s.status = tempPcb->p_s.status & ~STATUS_VMc;	//disabilito virtual memory (24-esimo bit)		
+		tempPcb->p_s.status = tempPcb->p_s.status & ~STATUS_IM(7);	//disabilito interrupt del terminale (15-esimo bit
+		tempPcb->p_s.status = tempPcb->p_s.status & ~STATUS_KUp;	//abilito kernel mode precedente KUp = 0
+		tempPcb->p_s.status = tempPcb->p_s.status & ~STATUS_VMp;	//disabilito virtual memory precedente
 		tempPcb->p_s.reg_sp = RAMTOP - FRAMESIZE * n; 
 		tempPcb->p_s.pc_epc = functionAddress;   
 	#endif

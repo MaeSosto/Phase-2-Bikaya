@@ -5,6 +5,8 @@ void bp_handler_DOIO(){}
 
 void bp_hadler_term(){}
 
+void bp_sys_sot(){}
+
 #define INTERRUPT_PENDING_MASK     	0x0000ff00
 #define INTERRUPT_PENDING_B      	8
 #define INTERRUPT_PENDING_FUNC(x)   (((x) & INTERRUPT_PENDING_MASK) >> INTERRUPT_PENDING_B)
@@ -16,6 +18,8 @@ int tempo=FALSE;
 //Gestore degli interrupt
 void interruptHandler(){
 	
+	tempo = FALSE;
+
 	// salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
 	//ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
 	//inizio a contare il tempo in user mode
@@ -24,6 +28,7 @@ void interruptHandler(){
 
 	//Prendo l' old area dell'interrupt al processo
 	struct state *AREA=(state_t *) INT_OLDAREA;
+	//SaveOldState(AREA, &(ACTIVE_PCB->p_s));
 
 	//*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
 	
@@ -145,8 +150,7 @@ void interruptHandler(){
 
 		// //Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato
 		
-		struct state *AREA=(state_t *) INT_OLDAREA;
-		SaveOldState(AREA, &(ACTIVE_PCB->p_s));
+		
 
 		//setSTATUS(getSTATUS() & ~STATUS_IM_MASK);
 		//setSTATUS(getSTATUS() & ~STATUS_IEc | STATUS_IM(2));
@@ -171,17 +175,21 @@ void syscallHandler(){
 
 	// struct state *AREA;
 	unsigned int cause;
-	int flag = 0; //Setto a true se devo ritornare qualcosa
-	unsigned int ritorno; //Assegno il valore di ritorno
-
 	
+	unsigned int ritorno; //Assegno il valore di ritorno
 
 	struct state *AREA = (state_t *) SYSBK_OLDAREA;
 	
+	SaveOldState((state_t *) SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
+
+
+	//cpy_state((state_t*) SYSBK_OLDAREA, &curr_proc->p_s);
 	
-
   	#ifdef TARGET_UMPS
-
+		
+		//Aumentiamo di una word
+		AREA->pc_epc = AREA->pc_epc + 4;
+		
 		//Accedo alla Old Area della system call
 		cause = (CAUSE_GET_EXCCODE(AREA->cause));
 	
@@ -212,7 +220,7 @@ void syscallHandler(){
 			
 			termprint("SYS 2 \n");
 			ritorno =  CreateProcess((struct state*)AREA->reg_a1, (int)AREA->reg_a2, (void **)AREA->reg_a3);			
-			flag = 1;	
+			
 
 		}
 
@@ -221,7 +229,7 @@ void syscallHandler(){
 			
 			termprint("SYS 3 \n");
 			ritorno = TerminateProcess((void **)AREA->reg_a1);
-			flag = 1;	
+			
 
 		}
 
@@ -250,7 +258,7 @@ void syscallHandler(){
 			//termprint("SYS 6 \n");
 			ritorno = DO_IO((unsigned int)AREA->reg_a1, (unsigned int*)AREA->reg_a2, (int)AREA->reg_a3);	
 			bp_handler_DOIO();
-			flag = 1;	
+		
 
 		}
 
@@ -259,7 +267,7 @@ void syscallHandler(){
 			
 			termprint("SYS 7 \n");
 			ritorno = SpecPassup(AREA->reg_a1, (struct state*)AREA->reg_a2, (struct state*)AREA->reg_a3);
-			flag = 1;
+			
 		}
 
 		//SYSCALL 8
@@ -285,35 +293,28 @@ void syscallHandler(){
     
     // }
 
-	#ifdef TARGET_UMPS
-
-		//dopo aver invocato una system call e’ necessario incrementare il program counter di una word affinché il processo continui
-		AREA->pc_epc = AREA->pc_epc + 4;
-
-	#endif
-
-	
 	//Ho un processo ancora attivo in cpu
 	if(ACTIVE_PCB != NULL){
 
+
+		//SaveOldState((state_t *) SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
+
+
 		//termprint("Sys: ricarico processo in CPU \n");
-		
+		bp_sys_sot();
 		SaveOldState(AREA, &(ACTIVE_PCB->p_s));
 
-		if (flag == 1){
+		#ifdef TARGET_UMPS
+		
+			ACTIVE_PCB->p_s.reg_v0 = ritorno;
+		
+		#endif
 
-			#ifdef TARGET_UMPS
-			
-				ACTIVE_PCB->p_s.reg_v0 = ritorno;
-			
-			#endif
+		#ifdef TARGET_UARM
 
-			#ifdef TARGET_UARM
-
-				ACTIVE_PCB->p_s.reg_a0 = ritorno;
-			
-			#endif
-		}
+			ACTIVE_PCB->p_s.reg_a0 = ritorno;
+		
+		#endif
 
 		LDST(&ACTIVE_PCB->p_s);
 

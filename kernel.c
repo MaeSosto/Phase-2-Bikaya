@@ -55,7 +55,7 @@ int main(){
 	#ifdef TARGET_UMPS
 	
 		//Setto lo status
-		setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IEp | STATUS_IM(2));
+		//setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IEp | STATUS_IM(2));
 	
 	#endif
 

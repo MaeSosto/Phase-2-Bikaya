@@ -116,7 +116,7 @@ void Scheduling(){
 	
 					//Abilito tutti gli interrupt e vado in kernel mode
 					// setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IM_MASK);
-						setSTATUS((getSTATUS() | STATUS_IEc) | STATUS_IM_MASK);//interrupt abilitati
+					setSTATUS((getSTATUS() | STATUS_IEc) | STATUS_IM_MASK);//interrupt abilitati
 				
 				#endif
 				

@@ -12,7 +12,7 @@
 // void bp_status4(){}
 // void bp_status5(){}
 
-bp_passaren_end(){}
+void bp_passaren_end(){}
 
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){
@@ -162,30 +162,39 @@ void Verhogen(int *semaddr){
     //Incremento il semaforo
     *semaddr+=1;
 
+    //Prendo il primo processo messo in attesa - ritorna NULL se non ci sono processi
+    pcb_t* pcb_blocked = removeBlocked(semaddr);
+
+    
+
 	// Controllo se ho più thread nella lista d'attesa
-	if (*semaddr <= 0){      
-        
-        //Prendo il primo processo messo in attesa
-	    pcb_t* pcb_blocked = removeBlocked(semaddr);
+	if (*semaddr <= 0){     
+         
+        if(pcb_blocked!=NULL){
+            //Setto la chiave del semaforo su cui il PCB è bloccato a NULL
+            pcb_blocked->p_semkey = NULL;
 
-        //Aggiorno il contatore dei processi bloccati
-        BLOCK_COUNT--;
-        
-        
-        //Mi salvo il processo che ho appena svegliato per poi aggiornare il suo status quando lo sbloccherò
-        GOODMORNING_PCB = pcb_blocked;
+            //Prendo il primo processo messo in attesa
+            //pcb_t* pcb_blocked = removeBlocked(semaddr);
 
-        //Rimetto la priorità originale del semaforo
-	 	//pcb_blocked->priority = pcb_blocked->original_priority;
+            //Aggiorno il contatore dei processi bloccati
+            BLOCK_COUNT--;
+            
+            //Mi salvo il processo che ho appena svegliato per poi aggiornare il suo status quando lo sbloccherò
+            //GOODMORNING_PCB = pcb_blocked;
 
-        //Salvo i registri dell'old area della sys al processo 
-        //state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
+            //Rimetto la priorità originale del semaforo
+            //pcb_blocked->priority = pcb_blocked->original_priority;
 
-        //Copio lo stato della old area della sys nel processo che lo ha sollevato 
-        //SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
+            //Salvo i registri dell'old area della sys al processo 
+            //state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
 
-        //Inserisco il processo nella ready queue
-        insertProcQ(ready_queue, pcb_blocked);
+            //Copio lo stato della old area della sys nel processo che lo ha sollevato 
+            //SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
+
+            //Inserisco il processo nella ready queue
+            insertProcQ(ready_queue, pcb_blocked);
+        }
         
     }
 
