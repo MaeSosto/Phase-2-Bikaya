@@ -20,10 +20,10 @@ void interruptHandler(){
 	
 	tempo = FALSE;
 
-	// salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-	//ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
-	//inizio a contare il tempo in user mode
-	//ACTIVE_PCB->kernel_start = getTODLO();
+	// //salvo il valore del tempo in user mode perchè sto entrando in kernel mode 
+	// ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
+	// //inizio a contare il tempo in kernel mode
+	// ACTIVE_PCB->kernel_start = getTODLO();
 
 
 	//Prendo l' old area dell'interrupt al processo
@@ -126,9 +126,13 @@ void interruptHandler(){
 
 			/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
 			SaveOldState(AREA, &(ACTIVE_PCB->p_s));
+
+			//Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
+			//ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+			
 		}
 
-
+	
 		//Richiamo lo scheduler
 		Scheduling();
 
@@ -138,28 +142,11 @@ void interruptHandler(){
 	//Controllo se ho processi attivi
 	else if(ACTIVE_PCB != NULL){
 		
-		bp_hadler_term();
-		
-		//Torno in user mode, così non si sollevano altri interrupt tranne quello del tempo
-		
-		
-
-		//setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IEp | STATUS_IM(2));
-
-		// bp_hadler_term();
-
-		// //Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato
-		
-		
-
-		//setSTATUS(getSTATUS() & ~STATUS_IM_MASK);
-		//setSTATUS(getSTATUS() & ~STATUS_IEc | STATUS_IM(2));
-
-		//bp_hadler_term();
-
-		//LDST(&ACTIVE_PCB->p_s);
+		//Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
+		//ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
 
 		Scheduling();
+		
 	}
 
 }
@@ -174,6 +161,13 @@ void syscallHandler(){
 	//Metti in pausa il contatore del tempo del pcb e aggiorni il suo valore 
 
 	// struct state *AREA;
+
+	// //Salvo il valore del tempo in user mode perchè sto entrando in kernel mode 
+	// ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
+
+	// //Inizio a contare il tempo in kernel mode
+	// ACTIVE_PCB->kernel_start = getTODLO();
+
 	unsigned int cause;
 	
 	unsigned int ritorno; //Assegno il valore di ritorno
@@ -210,7 +204,7 @@ void syscallHandler(){
 		//SYSCALL 1
 		if(AREA->reg_a0 == GETCPUTIME){
 			
-			termprint("SYS 1 \n");
+			//termprint("SYS 1 \n");
 			getCPUTime(&AREA->reg_a1, &AREA->reg_a2, &AREA->reg_a3);
 
 		}
@@ -218,8 +212,8 @@ void syscallHandler(){
 		//SYSCALL 2
 		else if(AREA->reg_a0 == CREATEPROCESS){
 			
-			termprint("SYS 2 \n");
-			ritorno =  CreateProcess((struct state*)AREA->reg_a1, (int)AREA->reg_a2, (void **)AREA->reg_a3);			
+			//termprint("SYS 2 \n");
+			ritorno =  CreateProcess((state_t*)AREA->reg_a1, (int)AREA->reg_a2, (void **)AREA->reg_a3);			
 			
 
 		}
@@ -296,12 +290,7 @@ void syscallHandler(){
 	//Ho un processo ancora attivo in cpu
 	if(ACTIVE_PCB != NULL){
 
-
-		//SaveOldState((state_t *) SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
-
-
-		//termprint("Sys: ricarico processo in CPU \n");
-		bp_sys_sot();
+		//Salvo lo stato
 		SaveOldState(AREA, &(ACTIVE_PCB->p_s));
 
 		#ifdef TARGET_UMPS
@@ -315,6 +304,12 @@ void syscallHandler(){
 			ACTIVE_PCB->p_s.reg_a0 = ritorno;
 		
 		#endif
+
+		// //Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
+		// ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+
+		// //Faccio partire l'user mode
+		// ACTIVE_PCB->user_start = getTODLO();
 
 		LDST(&ACTIVE_PCB->p_s);
 

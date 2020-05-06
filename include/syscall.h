@@ -42,7 +42,7 @@
     void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock);
 
     //SYSCALL 2
-    int CreateProcess(struct state *statep, int priority, void ** cpid);
+    int CreateProcess(state_t *statep, int priority, void ** cpid);
 
     //SYSCALL 3
     int TerminateProcess(void * pid);

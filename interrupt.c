@@ -123,45 +123,38 @@ void InterruptTerminal(){
 			//Controllo se il terminale è in trasmissione o ricezione
 
 			//Il terminale in RICEZIONE non è ready
-			if((reg->recv_status & TERMSTATMASK) != 1){
-				
-				if(*Semaforo.terminalR[i].s_key < 0){
+			if((reg->recv_status & TERMSTATMASK)!= 1){
 
+				if(*Semaforo.terminalR[i].s_key < 0){
+									
 					//Sblocco il processo sul terminale in ricezione del device richiesto
 					Verhogen(Semaforo.terminalR[i].s_key);
 
 					//Aggiorno lo status del processo svegliato
 					GOODMORNING_PCB->p_s.reg_v0 = reg->recv_status;
-
-					DO_IO(GOODMORNING_PCB->command, (unsigned int*)reg, TRUE);
-
+									
 				}
-				else{
 				
+				else{
+
 					//Invio ACK
 					reg->recv_command = 1;
 				
 				}
 				
-			}
+			}	
 
 			//Il terminale in TRASMISSIONE non è ready
 			if((reg->transm_status & TERMSTATMASK)!= 1){
 
 				if(*Semaforo.terminalT[i].s_key < 0){
-					
-					teminal_rec();
-					
+									
 					//Sblocco il processo sul terminale in ricezione del device richiesto
 					Verhogen(Semaforo.terminalT[i].s_key);
 
 					//Aggiorno lo status del processo svegliato
 					GOODMORNING_PCB->p_s.reg_v0 = reg->transm_status;
-					
-					ACTIVE_PCB = GOODMORNING_PCB;
-
-					//DO_IO(GOODMORNING_PCB->command, (unsigned int*)reg, FALSE);
-				
+									
 				}
 				
 				else{
@@ -171,10 +164,7 @@ void InterruptTerminal(){
 				
 				}
 				
-				
-			}
-
-			
+			}	
 
 		}
 	

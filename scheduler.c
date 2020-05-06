@@ -50,6 +50,9 @@ void ContextSwitch(){
 
 	//Prendo il processo in testa alla ready queue
 	ACTIVE_PCB = removeProcQ(ready_queue);
+
+	//Inizio a contare il tempo in user mode
+	//ACTIVE_PCB->user_start = getTODLO();
   
     //Setto il timer del processo
     *(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
@@ -63,14 +66,7 @@ void ContextSwitch(){
 void Scheduling(){
 	
 	//termprint("Scheduler: HO TOT PROCESSI BLOCCATI: ");
-	//stampaInt(BLOCK_COUNT);
-
-
-	// // salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-	// ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
-	// //inizio a contare il tempo in user mode
-	// ACTIVE_PCB->user_start = getTODLO();
-	
+	//stampaInt(BLOCK_COUNT);	
 	//La coda dei processi non è vuota
 	if(!emptyProcQ(ready_queue)){
 		

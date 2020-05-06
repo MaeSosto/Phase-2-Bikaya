@@ -163,9 +163,7 @@ void print(char *msg) {
     devregtr     status;
 
     SYSCALL(PASSEREN, (int)&term_mut, 0, 0); /* get term_mut lock */
-
-    bp_test_prof();
-    
+   
     while (*s != '\0') {
         /* Put "transmit char" command+char in term0 register (3rd word). This
                  actually starts the operation on the device! */
@@ -175,28 +173,7 @@ void print(char *msg) {
         status = SYSCALL(WAITIO, command, (int)base, FALSE);
         
         /*		PANIC(); */
-
-        //termprint("stampato \n");
-        // if((status & TERMSTATMASK) == 1){
-        //     bp_status1();        
-        // }
-        // if((status & TERMSTATMASK) == 2){
-        //     bp_status2();
-        // }
-        // if((status & TERMSTATMASK) == 3){
-        //     bp_status3();
-        // }
-        // if((status & TERMSTATMASK) == 4){
-        //     bp_status4();
-        // }
-        // if((status & TERMSTATMASK) == 5){
-            
-        // }else{
-        //     bp_status5();
-        // }
-
-        bp_test_prof();
-
+    
         if ((status & TERMSTATMASK) != TRANSM)
             PANIC();
         
@@ -266,6 +243,7 @@ void test() {
 
     /* P1 blocks until p2 finishes and Vs endp2 */
     SYSCALL(PASSEREN, (int)&endp2, 0, 0); /* P(endp2)     */
+
     print("p1 knows p2 ended\n");
 
     /* make sure we really blocked */

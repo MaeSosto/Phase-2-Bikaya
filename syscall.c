@@ -5,7 +5,7 @@
 
 
 
-
+void bp_create_culo(){}
 // void bp_status1(){}
 // void bp_status2(){}
 // void bp_status3(){}
@@ -29,17 +29,17 @@ void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallcloc
     //
 
     
-     ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + getTODLO()-ACTIVE_PCB->kernel_start;
-     ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
+    // ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + getTODLO()-ACTIVE_PCB->kernel_start;
+    // ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
 
-     *(user) = ACTIVE_PCB->user_total;
-     *(kernel) =ACTIVE_PCB ->kernel_total;
-     *(wallclock) =getTODLO()-ACTIVE_PCB->wallclock_start;
+    // *(user) = ACTIVE_PCB->user_total;
+    // *(kernel) =ACTIVE_PCB ->kernel_total;
+    // *(wallclock) =getTODLO()-ACTIVE_PCB->wallclock_start;
 
 }
 
 //SYSCALL 2
-int CreateProcess(struct state *statep, int priority, void ** cpid){
+int CreateProcess(state_t *statep, int priority, void ** cpid){
 
     // int SYSCALL(CREATEPROCESS, state_t *statep, int priority, void ** cpid)
     // – Questa system call crea un nuovo processo
@@ -55,31 +55,17 @@ int CreateProcess(struct state *statep, int priority, void ** cpid){
     pcb_t* tempPcb = allocPcb();
     
     // Controllo che l'indirizzo sia corretto
-    *((pcb_t **)cpid) = tempPcb;
+    //*((pcb_t **)cpid) = tempPcb;
+   
 
-    if ((cpid != NULL) && (tempPcb)){ //Ha successo: cpid non NULL e tempPcb allocato correttamente
+    if (tempPcb != NULL){ //Ha successo: cpid non NULL e tempPcb allocato correttamente
 
         //Assegno lo stato del nuovo processo figlio
-        #ifdef TARGET_UMPS  
+        SaveOldState(statep, &(tempPcb->p_s));
 
-            tempPcb->p_s.status = statep->status;
-            tempPcb->p_s.reg_sp = statep->reg_sp;
-            tempPcb->p_s.pc_epc = statep->pc_epc;     
-
-        #endif
-
-        #ifdef TARGET_UARM
-
-            tempPcb->p_s.cpsr = statep->cpsr; 
-            tempPcb->p_s.CP15_Control = statep->CP15_Control;
-            tempPcb->p_s.sp = statep->sp;
-            tempPcb->p_s.pc = statep->pc;
-
-        #endif
-
-        //SETTA IL TEMPO
-
-        tempPcb->priority = tempPcb->original_priority = priority;
+        //Settiamo la priority
+        tempPcb->priority = priority;
+        tempPcb->original_priority = priority;
 
         //Inserisco tempPcb come figlio di ACTIVE_PCB
         insertChild(ACTIVE_PCB, tempPcb);
@@ -87,8 +73,15 @@ int CreateProcess(struct state *statep, int priority, void ** cpid){
         //Inserisco il figlio nella ready queue
         insertProcQ(ready_queue, tempPcb);
 
-        return 0;
+        //Se cpid non è vuoto lo aggiorno con il nuovo processo filgio istanziato, altrimenti lo lascia NULL
+        if(cpid != NULL){
 
+            *((pcb_t **)cpid) = tempPcb;
+            
+        }
+
+        return 0;
+        
     }
 			
     else{ //Non ha successo
@@ -96,6 +89,7 @@ int CreateProcess(struct state *statep, int priority, void ** cpid){
         return -1;
             
     }
+    
 }
 
 //SYSCALL 3
@@ -163,48 +157,25 @@ void Verhogen(int *semaddr){
     *semaddr+=1;
 
     //Prendo il primo processo messo in attesa - ritorna NULL se non ci sono processi
-    pcb_t* pcb_blocked = removeBlocked(semaddr);
-
-    
+    pcb_t* pcb_blocked = removeBlocked(semaddr);   
 
 	// Controllo se ho più thread nella lista d'attesa
 	if (*semaddr <= 0){     
          
         if(pcb_blocked!=NULL){
+                        
             //Setto la chiave del semaforo su cui il PCB è bloccato a NULL
             pcb_blocked->p_semkey = NULL;
-
-            //Prendo il primo processo messo in attesa
-            //pcb_t* pcb_blocked = removeBlocked(semaddr);
 
             //Aggiorno il contatore dei processi bloccati
             BLOCK_COUNT--;
             
-            //Mi salvo il processo che ho appena svegliato per poi aggiornare il suo status quando lo sbloccherò
-            //GOODMORNING_PCB = pcb_blocked;
-
-            //Rimetto la priorità originale del semaforo
-            //pcb_blocked->priority = pcb_blocked->original_priority;
-
-            //Salvo i registri dell'old area della sys al processo 
-            //state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
-
-            //Copio lo stato della old area della sys nel processo che lo ha sollevato 
-            //SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
-
             //Inserisco il processo nella ready queue
             insertProcQ(ready_queue, pcb_blocked);
+            
         }
         
     }
-
-    // if(insert){
-
-    //     //Salvo il processo corrente e lo rimetto nella ready queue
-    //	   SaveProc();
-    //     termprint("Salvo nella verhogen \n");
-
-    // }
 
 }
 
@@ -231,6 +202,9 @@ void Passeren(int *semaddr){
 
         //Copio lo stato della old area della sys nel processo che lo ha sollevato 
         SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
+        
+        //Salvo il valore del tempo in kernelmode
+	    //ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
 
         //Metto il processo nella coda del semaforo
 	 	int ret = insertBlocked(semaddr, ACTIVE_PCB);
@@ -240,8 +214,6 @@ void Passeren(int *semaddr){
         
         // L'ACTIVE PCB VA MESSO A NULL ALLA FINE DELLA SYSCALL PRIMA DI CHIAMARE LO SCHEDULER
         ACTIVE_PCB = NULL;
-
-        bp_passaren_end();
 
         //assegnamento al semd NON andato a buon fine
         if(ret){
