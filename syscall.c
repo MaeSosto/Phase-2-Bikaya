@@ -1,55 +1,39 @@
 #include "include/syscall.h"
 
-#define TERMSTATMASK 0xFF
-
-
-
-
-void bp_create_culo(){}
-// void bp_status1(){}
-// void bp_status2(){}
-// void bp_status3(){}
-// void bp_status4(){}
-// void bp_status5(){}
-
-void bp_passaren_end(){}
-
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){
     
-    // void SYSCALL(GETCPUTIME, unsigned int *user, unsigned int *kernel, unsigned int *wallclock)
-    // Quando invocata, la SYS1 restituisce il tempo di
-    // esecuzione del processo che l’ha chiamata fino a
-    // quel momento, separato in tre variabili:
-    // –Il tempo usato dal processo come utente (user)
-    // –Il tempo usato dal processo come kernel (tempi
-    // di system call e interrupt relativi al processo)
-    // –Tempo totale trascorso dalla prima attivazione
-    // del processo.
-    //
-
+    //Incremento il tempo totale del kernel
+    ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + getTODLO()-ACTIVE_PCB->kernel_start;
     
-    // ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + getTODLO()-ACTIVE_PCB->kernel_start;
-    // ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
+    //Incremento il tempo totale dello user
+    ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
+    
+    //Se ho un tempo user lo assegno 
+    if(user != NULL){
 
-    // *(user) = ACTIVE_PCB->user_total;
-    // *(kernel) =ACTIVE_PCB ->kernel_total;
-    // *(wallclock) =getTODLO()-ACTIVE_PCB->wallclock_start;
-
+        *(user) = ACTIVE_PCB->user_total;
+           
+    }
+    
+    //Se ho un tempo kernel lo assegno 
+    if(kernel != NULL){
+        
+        *(kernel) = ACTIVE_PCB->kernel_total;
+    
+    }
+        
+    //Se ho un tempo totale lo assegno 
+    if(wallclock != NULL){
+    
+        *(wallclock) = getTODLO() - ACTIVE_PCB->wallclock_start;
+    
+    }
+    
 }
 
 //SYSCALL 2
 int CreateProcess(state_t *statep, int priority, void ** cpid){
-
-    // int SYSCALL(CREATEPROCESS, state_t *statep, int priority, void ** cpid)
-    // – Questa system call crea un nuovo processo
-    // come figlio del chiamante. Il program counter, lo
-    // stack pointer, e lo stato sono indicati nello stato
-    // iniziale. Se la system call ha successo il valore di
-    // ritorno è 0 altrimenti è -1. Se cpid != NULL e la
-    // chiamata ha successo *cpid contiene
-    // l’identificatore del processo figlio, rappresentato
-    // dall’indirizzo del suo pcb_t.
 
     //Creo nuovo processo figlio
     pcb_t* tempPcb = allocPcb();
@@ -143,16 +127,6 @@ int TerminateProcess(void * pid){
 //SYSCALL 4 - risveglia il rocesso dall'attesa
 void Verhogen(int *semaddr){
 
-    // void SYSCALL(VERHOGEN, int *semaddr, 0, 0)
-    // – Operazione di rilascio su un semaforo. Il valore
-    // del semaforo è memorizzato nella variabile di
-    // tipo intero passata per indirizzo. L’indirizzo
-    // della variabile agisce da identificatore per il
-    // semaforo.
-    
-    //  Il semaforo viene incrementato. Se ci sono task in coda, uno dei task in coda il primo viene tolto dalla coda, posto in stato di ready (sarà perciò eseguito appena schedulato dal sistema operativo).
-    // V(): incrementa il valore. Nel caso in cui ho 1 o più thread nella lista d'attesa, prelevo il primo e lo inserisco nella lista dei pronti. Se non sono presenti thread nella lista d'attesa il risultato sarà che avremo la variabile incrementata di 1.
-
     //Incremento il semaforo
     *semaddr+=1;
 
@@ -182,15 +156,6 @@ void Verhogen(int *semaddr){
 //SYSCALL 5 - metto processo in attesa su un s
 void Passeren(int *semaddr){
 
-    // void SYSCALL(PASSEREN, int *semaddr, 0, 0)
-    // – Operazione di richiesta di un semaforo. Il valore
-    // del semaforo è memorizzato nella variabile di
-    // tipo intero passata per indirizzo. L’indirizzo
-    // della variabile agisce da identificatore per il
-    // semaforo.
-    
-    //  Il semaforo viene decrementato. Se, dopo il decremento, il semaforo ha un valore negativo, il task viene sospeso e accodato, in attesa di essere riattivato da un altro task.
-
     //Decremento il semaforo
     *semaddr-=1;
 
@@ -204,7 +169,9 @@ void Passeren(int *semaddr){
         SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
         
         //Salvo il valore del tempo in kernelmode
-	    //ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+
+	    ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+        ACTIVE_PCB->kernel_start=0;
 
         //Metto il processo nella coda del semaforo
 	 	int ret = insertBlocked(semaddr, ACTIVE_PCB);
@@ -229,27 +196,6 @@ void Passeren(int *semaddr){
 //SYSCALL 6
 int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
 
-    // // int SYSCALL(IOCOMMAND, unsigned int command, unsigned int *register, int subdevice)
-    // // – Questa system call attiva una operazione di I/O
-    // // copiando parametro command nel campo
-    // // comando del registro del dispositivo indicato
-    // // come puntatore nel secondo argomento.
-    // // –L’operazione è bloccante, quindi il chiamante
-    // // viene sospeso sino alla conclusione del comando.
-    // // Il valore ritornato è il contenuto del registro di
-    // // status del dispositivo.
-    // // –Il quarto parametro indica a quale sottodevice si
-    // // sta facendo riferimento nel caso in cui si voglia
-    // // portare avanti un’operazione su un terminale. 0
-    // // corrisponde alla trasmissione, 1 alla ricezione.
-
-    //if(ACTIVE_PCB != NULL){
-        
-       // ACTIVE_PCB->command=command;
-
-    //}
-    
-    
     int *sem;
     int dev = 0;
     int line = 0;
@@ -257,12 +203,6 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
 
     dev = numDev((unsigned int *)registro);
     line = numLine((unsigned int *)registro);
-
-    // termprint("La linea e': ");
-    // stampaInt(line);
-    // termprint("\nIl device e': ");
-    // stampaInt(dev);
-    // termprint("\n");
 
     //Non è un terminale
     if(line < 7){
@@ -299,7 +239,9 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
 
             
             //La prima volta che entra inuna DoIO il dispositivo è ready, in quel caso non prendo il comando 
-            if(!*sem){ //Entra qua se il contenuto di sem è 0, ovvero se non ci sono processi bloccati su quel semaforo
+            if(!*sem){ 
+                
+                //Entra qua se il contenuto di sem è 0, ovvero se non ci sono processi bloccati su quel semaforo
 
                 termreg->transm_command = command;
             
@@ -313,15 +255,12 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
         //Ricezione
         else{
 
-
-            /*dai nostri amici trattino         
-            - richiesta di I/O su un terminale in trasmissione, si scrive il comando nel campo transm_command
-            - semaforo con valore 1, terminale libero in trasmissione
-            */
             //Blocco il processo 
             sem = Semaforo.terminalR[dev].s_key;
             
-            if(!*sem){ //Entra qua se il contenuto di sem è 0, ovvero se non ci sono processi bloccati su quel semaforo
+            if(!*sem){ 
+                
+                //Entra qua se il contenuto di sem è 0, ovvero se non ci sono processi bloccati su quel semaforo
 
                 termreg->recv_command = command;
          
@@ -339,11 +278,9 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
         
         Passeren(sem);
         //Dopo la passeren l'active pcb è a null, gli riassegno il processo svegliato
-        //ACTIVE_PCB = GOODMORNING_PCB;
 
     }
-            
-    
+             
     //Qua vengo da un interrupt 
     else{
 
@@ -351,8 +288,6 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
         outProcQ(ready_queue, GOODMORNING_PCB);        
         
     }
-
-
 
     //Qua lo status è BUSY
     
@@ -398,9 +333,13 @@ void getPid(void ** pid, void ** ppid){
 
         //assegna l'identificativo del processo genitore a *ppid
         if (ppid != NULL){
+
             if (ACTIVE_PCB->p_parent != NULL){
+            
                 *((pcb_t **)ppid) = ACTIVE_PCB->p_parent;
+            
             }
+
         }
 
     }

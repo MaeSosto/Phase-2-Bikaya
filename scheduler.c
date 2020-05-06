@@ -50,12 +50,20 @@ void ContextSwitch(){
 
 	//Prendo il processo in testa alla ready queue
 	ACTIVE_PCB = removeProcQ(ready_queue);
-
-	//Inizio a contare il tempo in user mode
-	//ACTIVE_PCB->user_start = getTODLO();
   
     //Setto il timer del processo
     *(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
+	
+	//Se non ho mai settato il tempo iniziale 
+	if(!ACTIVE_PCB->wallclock_start){
+	
+		//Assegno il tempo assoluto di inizio del processo
+		ACTIVE_PCB->wallclock_start=getTODLO();
+	
+	}
+	
+	//Inizio a contare il tempo in user mode
+	ACTIVE_PCB->user_start = getTODLO();
 	
 	//Carico il processo nel processore
    	LDST(&ACTIVE_PCB->p_s);   

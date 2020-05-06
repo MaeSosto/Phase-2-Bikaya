@@ -20,12 +20,19 @@ void interruptHandler(){
 	
 	tempo = FALSE;
 
-	// //salvo il valore del tempo in user mode perchè sto entrando in kernel mode 
-	// ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
-	// //inizio a contare il tempo in kernel mode
-	// ACTIVE_PCB->kernel_start = getTODLO();
+	//Se il processo non è NULL gestisco il tempo
+	if(ACTIVE_PCB != NULL){
+		
+		//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
+		ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
 
-
+		//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
+		ACTIVE_PCB->user_start = 0;
+		
+		//inizio a contare il tempo in kernel mode
+		ACTIVE_PCB->kernel_start = getTODLO();
+	}
+	 
 	//Prendo l' old area dell'interrupt al processo
 	struct state *AREA=(state_t *) INT_OLDAREA;
 	//SaveOldState(AREA, &(ACTIVE_PCB->p_s));
@@ -127,9 +134,12 @@ void interruptHandler(){
 			/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
 			SaveOldState(AREA, &(ACTIVE_PCB->p_s));
 
-			//Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-			//ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+			//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
+			ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
 			
+			//Faccio partire l'user mode perchè finisco un interrupt
+			ACTIVE_PCB->user_start = getTODLO();
+		
 		}
 
 	
@@ -142,8 +152,8 @@ void interruptHandler(){
 	//Controllo se ho processi attivi
 	else if(ACTIVE_PCB != NULL){
 		
-		//Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-		//ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+		// //Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
+		// ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
 
 		Scheduling();
 		
@@ -156,17 +166,19 @@ void interruptHandler(){
 //Gestore delle system call
 void syscallHandler(){
 
-	//insert = FALSE;
+	//Se il processo non è NULL gestisco il tempo
+	if(ACTIVE_PCB != NULL){
+		
+		//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
+		ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
 
-	//Metti in pausa il contatore del tempo del pcb e aggiorni il suo valore 
+		//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
+		ACTIVE_PCB->user_start = 0;
+		
+		//inizio a contare il tempo in kernel mode
+		ACTIVE_PCB->kernel_start = getTODLO();
 
-	// struct state *AREA;
-
-	// //Salvo il valore del tempo in user mode perchè sto entrando in kernel mode 
-	// ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
-
-	// //Inizio a contare il tempo in kernel mode
-	// ACTIVE_PCB->kernel_start = getTODLO();
+	}
 
 	unsigned int cause;
 	
@@ -223,7 +235,6 @@ void syscallHandler(){
 			
 			termprint("SYS 3 \n");
 			ritorno = TerminateProcess((void **)AREA->reg_a1);
-			
 
 		}
 
@@ -305,11 +316,11 @@ void syscallHandler(){
 		
 		#endif
 
-		// //Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-		// ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
-
-		// //Faccio partire l'user mode
-		// ACTIVE_PCB->user_start = getTODLO();
+		//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
+		ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+			
+		//Faccio partire l'user mode perchè finisco un interrupt
+		ACTIVE_PCB->user_start = getTODLO();
 
 		LDST(&ACTIVE_PCB->p_s);
 

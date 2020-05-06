@@ -21,10 +21,13 @@
 
     #endif
 
-    //locazione in memoria dell'Interrupting Devices Bit Map
-    #define INTERRUPTING_DEVICES_BIT_MAP 0x10000003C
-    //macro per recuperare il registro della linea su cui è pendente un interrupt
-    #define DEVICE_REGISTER(line, dev)  ( 0x1000.0050 + ((line - 3) * 0x80) + (device * 0x10) )
+    /* Interrupting devices bitmaps starting address: the actual bitmap address is computed with INT_INTBITMAP_START + (WORD_SIZE * (int_no - 3)) */
+    #define PENDING_BITMAP_START 0x1000003c
+    /* Physical memory frame size */
+    #define WORD_SIZE 4
+    /* funzione per ottenere il bitmap corrente della linea di interrupt */
+    #define INTR_CURRENT_BITMAP(LINENO)  (unsigned int *)(PENDING_BITMAP_START + (WORD_SIZE * (LINENO - 3)))
+
 
     extern struct pcb_t *ACTIVE_PCB;
     extern struct pcb_t *GOODMORNING_PCB;
@@ -35,7 +38,5 @@
 	void InterruptIntervalTimer();
     void InterruptTape();
     void InterruptTerminal();
-
-    int getDevice(int line_no, int dev_no);
     
 #endif

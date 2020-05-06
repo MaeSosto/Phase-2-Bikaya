@@ -125,7 +125,7 @@ struct pcb_t *initAllPCB(unsigned int functionAddress, int priority){
 
 	tempPcb->priority = n;
 	tempPcb->original_priority = n;
-  	tempPcb->wallclock_start=getTODLO();
+  	//tempPcb->wallclock_start=getTODLO();
 	return tempPcb;
   
 }
@@ -238,6 +238,23 @@ int numLine(unsigned int *registro){
 	}
 
 	return -1;
+
+}
+
+//Restituisce 1 se l'eccezione è stata lanciata dal numero della linea e dal device in input
+int Eccezione(int linea, int device){
+
+	if(*INTR_CURRENT_BITMAP(linea) & (1 << device)){
+
+		return 1;
+
+	}
+
+	else{
+
+		return 0;
+
+	}
 
 }
 

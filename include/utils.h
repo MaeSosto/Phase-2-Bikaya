@@ -73,6 +73,7 @@
 	//Qualsiasi sia l'indirizzo passato, restituisce un numero da 3 a 7 (quale linea)
 	int numLine(unsigned int *registro);
 
-	void stampaInt(int n);
+	//Restituisce 1 se l'eccezione è stata lanciata dal numero della linea e dal device in input
+	int Eccezione(int linea, int device);
 
 #endif
