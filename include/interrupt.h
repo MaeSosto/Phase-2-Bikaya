@@ -34,8 +34,12 @@
     #define TIME_SLICE 3000
     #define TERMSTATMASK 0xFF
     #define CMD_ACK          1
-
+    
+    void InterruptPLC();
 	void InterruptIntervalTimer();
+    void InterruptDisk();
+    void InterruptNetwork();
+    void InterruptPrinter();
     void InterruptTape();
     void InterruptTerminal();
     

@@ -20,7 +20,7 @@
  *      Modified by Mattia Maldini, Renzo Davoli 2020
  */
 
-void bp_test_prof(){}
+void bp_tempo(){}
 
 #ifdef TARGET_UMPS
 #include "umps/libumps.h"
@@ -83,7 +83,7 @@ typedef unsigned int pid_t;
 #define TERMCHARMASK 0xFF00
 
 #define MINLOOPTIME 1000
-#define LOOPNUM     1000
+#define LOOPNUM     10000
 
 #define BADADDR 0xFFFFFFFF /* could be 0x00000000 as well */
 
@@ -93,8 +93,6 @@ typedef unsigned int pid_t;
 /* just to be clear */
 #define NOLEAVES 4 /* number of leaves of p7 process tree */
 #define MAXSEM   20
-
-extern void termprint(char *str);
 
 
 int term_mut = 1,   /* for mutual exclusion on terminal */
@@ -163,7 +161,7 @@ void print(char *msg) {
     devregtr     status;
 
     SYSCALL(PASSEREN, (int)&term_mut, 0, 0); /* get term_mut lock */
-   
+
     while (*s != '\0') {
         /* Put "transmit char" command+char in term0 register (3rd word). This
                  actually starts the operation on the device! */
@@ -171,19 +169,15 @@ void print(char *msg) {
 
         /* Wait for I/O completion (SYS8) */
         status = SYSCALL(WAITIO, command, (int)base, FALSE);
-        
+
         /*		PANIC(); */
-    
+
         if ((status & TERMSTATMASK) != TRANSM)
             PANIC();
-        
-        //termprint("Primo panic ciaone \n");
 
         if (((status & TERMCHARMASK) >> BYTELEN) != *s)
             PANIC();
 
-       
-        
         s++;
     }
 
@@ -243,7 +237,6 @@ void test() {
 
     /* P1 blocks until p2 finishes and Vs endp2 */
     SYSCALL(PASSEREN, (int)&endp2, 0, 0); /* P(endp2)     */
-
     print("p1 knows p2 ended\n");
 
     /* make sure we really blocked */
@@ -329,13 +322,11 @@ void p2() {
 
     now1 = getTODLO();                                                       /* time of day   */
     SYSCALL(GETCPUTIME, (int)&user_t1, (int)&kernel_t1, (int)&wallclock_t1); /* CPU time used */
+    
 
-    int localsem = 0;
     /* delay for some time */
-    for (i = 1; i < LOOPNUM; i++) {
-        SYSCALL(VERHOGEN, (int)&localsem, 0, 0);
-        SYSCALL(PASSEREN, (int)&localsem, 0, 0);
-    }
+    for (i = 1; i < LOOPNUM; i++)
+        ;
 
     SYSCALL(GETCPUTIME, (int)&user_t2, (int)&kernel_t2, (int)&wallclock_t2); /* CPU time used */
     now2 = getTODLO();                                                       /* time of day  */
@@ -549,7 +540,8 @@ void p4b() {
 void p5() {
     print("p5 starts (and hopefully dies)\n");
 
-    SYSCALL(13, 0, 0, 0); /* should cause termination because p5 has no trap vector */
+    SYSCALL(13, 0, 0, 0); /* should cause termination because p5 has no
+                                                                                                   trap vector */
 
     print("error: p5 alive after SYS13() with no trap vector\n");
 

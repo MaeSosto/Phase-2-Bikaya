@@ -7,6 +7,8 @@ void bp_hadler_term(){}
 
 void bp_sys_sot(){}
 
+void bp_getTodlo(){}
+
 #define INTERRUPT_PENDING_MASK     	0x0000ff00
 #define INTERRUPT_PENDING_B      	8
 #define INTERRUPT_PENDING_FUNC(x)   (((x) & INTERRUPT_PENDING_MASK) >> INTERRUPT_PENDING_B)
@@ -23,19 +25,24 @@ void interruptHandler(){
 	//Se il processo non è NULL gestisco il tempo
 	if(ACTIVE_PCB != NULL){
 		
-		//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
-		ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
+		if(ACTIVE_PCB->user_start > 0){
 
-		//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
-		ACTIVE_PCB->user_start = 0;
+			//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
+			ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
+
+			//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
+			ACTIVE_PCB->user_start = 0;
+			
+		}
 		
 		//inizio a contare il tempo in kernel mode
-		ACTIVE_PCB->kernel_start = getTODLO();
+		//ACTIVE_PCB->kernel_start = getTODLO();
 	}
-	 
+
+
 	//Prendo l' old area dell'interrupt al processo
 	struct state *AREA=(state_t *) INT_OLDAREA;
-	//SaveOldState(AREA, &(ACTIVE_PCB->p_s));
+	//SaveOldAreaToPCB(AREA, &(ACTIVE_PCB->p_s));
 
 	//*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
 	
@@ -60,11 +67,18 @@ void interruptHandler(){
 
 	
 	//Linee interrupt da confrontare per trovare l'interrupt giusto fra gli 8 possibili
-	
+	if(ACTIVE_PCB != NULL){
+		//inizio a contare il tempo in kernel mode
+		ACTIVE_PCB->kernel_start = getTODLO();
+	}
+
 	//Interrupt 1 - Inter-processor interrupts
 	if(CAUSE_IP_GET(cause, INT_T_SLICE)){
 		
-		termprint("Interrupt: 1 \n");
+		InterruptPLC();
+		//????
+	// 	 setTIMER(TIME_SLICE);
+    //   scheduler();
 	
 	}
 	
@@ -79,14 +93,13 @@ void interruptHandler(){
 	//Interrut 3 - Disk
 	else if(CAUSE_IP_GET(cause, INT_DISK)){
 		
-		termprint("Interrupt: 3 \n");
+		InterruptDisk();
 		
 	}
 	
 	//Interrupt 4 - Tape
 	else if(CAUSE_IP_GET(cause, INT_TAPE)){
 
-		//termprint("Interrupt: 4 \n");
 		InterruptTape();
 	
 	}
@@ -94,14 +107,14 @@ void interruptHandler(){
 	//Interrupt 5 - Network
 	else if(CAUSE_IP_GET(cause, INT_UNUSED)){	
 			
-		termprint("Interrupt: 5 \n");
+		InterruptNetwork();
 	
 	}
 	
 	//Interrupt 6 - Printer
 	else if(CAUSE_IP_GET(cause, INT_PRINTER)){
 		
-		termprint("Interrupt: 6 \n");
+		InterruptPrinter();
 		
 	}
 
@@ -118,7 +131,8 @@ void interruptHandler(){
 	else{
 		
 		termprint("Interrupt: err\n");
-		
+		PANIC();
+
 	}
 
 	//Inviamo ACK a CP0
@@ -132,13 +146,14 @@ void interruptHandler(){
 			struct state *AREA=(state_t *) INT_OLDAREA;
 
 			/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
-			SaveOldState(AREA, &(ACTIVE_PCB->p_s));
+			SaveOldAreaToPCB(AREA, &(ACTIVE_PCB->p_s));
 
+			
 			//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
-			ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+			//ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
 			
 			//Faccio partire l'user mode perchè finisco un interrupt
-			ACTIVE_PCB->user_start = getTODLO();
+			ACTIVE_PCB->user_start = getTODLO(); 
 		
 		}
 
@@ -153,7 +168,10 @@ void interruptHandler(){
 	else if(ACTIVE_PCB != NULL){
 		
 		// //Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-		// ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+		 //ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+
+		ACTIVE_PCB->user_start = getTODLO(); 
+
 
 		Scheduling();
 		
@@ -170,7 +188,8 @@ void syscallHandler(){
 	if(ACTIVE_PCB != NULL){
 		
 		//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
-		ACTIVE_PCB->user_total += getTODLO() - ACTIVE_PCB->user_start;
+		bp_getTodlo();
+		ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
 
 		//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
 		ACTIVE_PCB->user_start = 0;
@@ -186,7 +205,7 @@ void syscallHandler(){
 
 	struct state *AREA = (state_t *) SYSBK_OLDAREA;
 	
-	SaveOldState((state_t *) SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
+	SaveOldAreaToPCB((state_t *) SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
 
 
 	//cpy_state((state_t*) SYSBK_OLDAREA, &curr_proc->p_s);
@@ -285,24 +304,61 @@ void syscallHandler(){
 
 		else{
 
-			termprint("SYS ALTRA \n");
-			//Inoltro al gestore di livello superiore (Spec_Passup) oppure termina
+			//Controllo se ho un gestore
+			if(ACTIVE_PCB->SysNew != NULL && ACTIVE_PCB->SysOld != NULL){
+
+				//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
+				SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->SysOld);
+				
+				//Carico lo stato nella new area
+				LDST(ACTIVE_PCB->SysNew);
+			}
+
+			//Non ho un gestore
+			else{
+
+				//Termino il processo
+				TerminateProcess(ACTIVE_PCB);
+
+				//Richiamo lo scheduler
+				Scheduling();
+				
+			}
+			
 		}
 
     }
 
-	// //Controllo che sia un Breakpoint (EXC_BP 9)
-    // else if(CAUSE_GET_EXCCODE(AREA->cause) == EXC_BP){
-    
-    // 	termprint("E' partito un Breakpoint \n");
-    
-    // }
+	//Controllo che sia un Breakpoint (EXC_BP 9)
+	else if(CAUSE_GET_EXCCODE(AREA->cause) == EXC_BP){
+
+		//Controllo se ho un gestore
+		if(ACTIVE_PCB->SysNew != NULL && ACTIVE_PCB->SysOld != NULL){
+
+			//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
+			SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->SysOld);
+			
+			//Carico lo stato nella new area
+			LDST(ACTIVE_PCB->SysNew);
+		}
+
+		//Non ho un gestore
+		else{
+
+			//Termino il processo
+			TerminateProcess(ACTIVE_PCB);
+
+			//Richiamo lo scheduler
+			Scheduling();
+			
+		}
+	}
 
 	//Ho un processo ancora attivo in cpu
 	if(ACTIVE_PCB != NULL){
 
 		//Salvo lo stato
-		SaveOldState(AREA, &(ACTIVE_PCB->p_s));
+		SaveOldAreaToPCB(AREA, &(ACTIVE_PCB->p_s));
 
 		#ifdef TARGET_UMPS
 		
@@ -317,8 +373,11 @@ void syscallHandler(){
 		#endif
 
 		//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
-		ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
-			
+		ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
+		
+		//Setto
+		ACTIVE_PCB->kernel_start = 0;
+
 		//Faccio partire l'user mode perchè finisco un interrupt
 		ACTIVE_PCB->user_start = getTODLO();
 
@@ -328,8 +387,6 @@ void syscallHandler(){
 
 	//Non ho più processi attivi sulla cpu
 	else{
-
-		//termprint("Sys: vado nello scheduler \n");
 		
 		//Chiamo lo scheduler
 		Scheduling();
@@ -341,36 +398,52 @@ void syscallHandler(){
 //Gestore delle trap
 void trapHandler(){
 
-  //Non faccio niente per ora
-  #ifdef TARGET_UMPS
-  
-    termprint("Sto gestendo una trap \n");
-  
-  #endif
+    //Controllo se ho un gestore
+	if(ACTIVE_PCB->PTNew != NULL && ACTIVE_PCB->PTOld != NULL){
 
-  #ifdef TARGET_UARM
-  
-    tprint("Sto gestendo una trap \n");
-  
-  #endif
+		//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
+		SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->PTOld);
+		
+		//Carico lo stato nella new area
+		LDST(ACTIVE_PCB->PTNew);
+	}
+
+	//Non ho un gestore
+	else{
+
+		//Termino il processo
+		TerminateProcess(ACTIVE_PCB);
+
+		//Richiamo lo scheduler
+		Scheduling();
+		
+	}
 
 }
 
 //Gestore delle tlb
 void tlbHandler(){
 
-  //Non faccio niente per ora  
-  #ifdef TARGET_UMPS
-  
-    termprint("Sto gestendo la TLB \n");
-  
-  #endif
-  
-  #ifdef TARGET_UARM
-  
-    tprint("Sto gestendo la TLB \n");
-  
-  #endif
+  	//Controllo se ho un gestore
+	if(ACTIVE_PCB->TLBNew != NULL && ACTIVE_PCB->TLBOld != NULL){
+
+		//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
+		SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->TLBOld);
+		
+		//Carico lo stato nella new area
+		LDST(ACTIVE_PCB->TLBNew);
+	}
+
+	//Non ho un gestore
+	else{
+
+		//Termino il processo
+		TerminateProcess(ACTIVE_PCB);
+
+		//Richiamo lo scheduler
+		Scheduling();
+		
+	}
 
 }
 

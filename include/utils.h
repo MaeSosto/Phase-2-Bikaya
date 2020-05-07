@@ -59,7 +59,10 @@
 	struct pcb_t *initAllPCB(unsigned int functionAddress, int priority);
 
 	//Salvo lo stato della interrupt old area nel processo appena eseguito
-	void SaveOldState(state_t* oldarea, state_t* processo);
+	void SaveOldAreaToPCB(state_t* oldarea, state_t* processo);
+
+	//Salvo lo stato del PCB nella old area
+	void SavePCBToOldArea(state_t* processo, state_t* oldarea);
 
 	//Salva il processo prima di poterlo mettere di nuovo nella ready queue
 	void SaveProc();

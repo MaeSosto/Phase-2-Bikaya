@@ -39,53 +39,55 @@ struct pcb_t *allocPcb(void){
 
 	//Campi di tipo intero: imposto a 0
 	#ifdef TARGET_UMPS
-	tempPcb->priority = 0;
-	tempPcb->p_s.entry_hi = 0;
-	tempPcb->p_s.cause = 0;
-	tempPcb->p_s.status = 0;
-	tempPcb->p_s.pc_epc = 0;
-	tempPcb->p_s.hi = 0;
-	tempPcb->p_s.lo = 0;
-	tempPcb->user_start=0;
-    tempPcb->user_total=0;
-    tempPcb->kernel_start=0;
-    tempPcb->kernel_total=0;
-    tempPcb->start_time=0;
-    tempPcb->wallclock_start=0;
+		tempPcb->priority = 0;
+		tempPcb->p_s.entry_hi = 0;
+		tempPcb->p_s.cause = 0;
+		tempPcb->p_s.status = 0;
+		tempPcb->p_s.pc_epc = 0;
+		tempPcb->p_s.hi = 0;
+		tempPcb->p_s.lo = 0;
 
-	tempPcb->command=0;
+		tempPcb->command=0;
 	#endif
 
 	#ifdef TARGET_UARM
-	tempPcb->p_s.a1 = 0;  
-	tempPcb->p_s.a2 = 0;   
-	tempPcb->p_s.a3 = 0;  
-	tempPcb->p_s.a4 = 0;   
-	tempPcb->p_s.v1 = 0;   
-	tempPcb->p_s.v2 = 0;    
-	tempPcb->p_s.v3 = 0;  
-	tempPcb->p_s.v4 = 0;   
-	tempPcb->p_s.v5 = 0;   
-	tempPcb->p_s.v6 = 0; 
-	tempPcb->p_s.sl = 0;  
-	tempPcb->p_s.fp = 0;    
-	tempPcb->p_s.ip = 0;   
-	tempPcb->p_s.sp = 0;    
-	tempPcb->p_s.lr = 0;    
-	tempPcb->p_s.pc = 0;    
-	tempPcb->p_s.cpsr = 0;
-	tempPcb->p_s.CP15_Control = 0;
-	tempPcb->p_s.CP15_EntryHi = 0;
-	tempPcb->p_s.CP15_Cause = 0;
-	tempPcb->p_s.TOD_Hi = 0;
-	tempPcb->p_s.TOD_Low = 0;
-	tempPcb->user_start=0;
-	tempPcb->user_total=0;
-    tempPcb->kernel_start=0;
-    tempPcb->kernel_total=0;
-    tempPcb->start_time=0;
-    tempPcb->wallclock_start=0;
+		tempPcb->p_s.a1 = 0;  
+		tempPcb->p_s.a2 = 0;   
+		tempPcb->p_s.a3 = 0;  
+		tempPcb->p_s.a4 = 0;   
+		tempPcb->p_s.v1 = 0;   
+		tempPcb->p_s.v2 = 0;    
+		tempPcb->p_s.v3 = 0;  
+		tempPcb->p_s.v4 = 0;   
+		tempPcb->p_s.v5 = 0;   
+		tempPcb->p_s.v6 = 0; 
+		tempPcb->p_s.sl = 0;  
+		tempPcb->p_s.fp = 0;    
+		tempPcb->p_s.ip = 0;   
+		tempPcb->p_s.sp = 0;    
+		tempPcb->p_s.lr = 0;    
+		tempPcb->p_s.pc = 0;    
+		tempPcb->p_s.cpsr = 0;
+		tempPcb->p_s.CP15_Control = 0;
+		tempPcb->p_s.CP15_EntryHi = 0;
+		tempPcb->p_s.CP15_Cause = 0;
+		tempPcb->p_s.TOD_Hi = 0;
+		tempPcb->p_s.TOD_Low = 0;
 	#endif
+
+	//Campi usati per gestire il tempo
+	tempPcb->user_start = 0;
+	tempPcb->user_total = 0;
+    tempPcb->kernel_start = 0;
+    tempPcb->kernel_total = 0;
+    tempPcb->start_time = 0;
+    tempPcb->wallclock_start = 0;
+	tempPcb->SysOld = NULL;
+    tempPcb->SysNew = NULL;
+    tempPcb->TLBOld = NULL;
+    tempPcb->TLBNew = NULL;
+    tempPcb->PTOld =  NULL;
+    tempPcb->PTNew =  NULL;
 
 	//Campi di tipo list_head: uso INIT_LIST_HEAD
 	INIT_LIST_HEAD(&tempPcb->p_next);

@@ -53,6 +53,14 @@
         unsigned int start_time;
         unsigned int wallclock_start;
 
+        //Aree in caso si passasse a un livello superiore
+        state_t *SysOld;
+        state_t *SysNew;
+        state_t *TLBOld;
+        state_t *TLBNew;
+        state_t *PTOld;
+        state_t *PTNew;
+
     } pcb_t;
 
 

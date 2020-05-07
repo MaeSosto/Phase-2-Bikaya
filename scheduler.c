@@ -34,6 +34,15 @@ void ContextSwitch(){
 		//Faccio l'aging
 		Aging();
 
+		//fermo tempo in kernel mode del proc che mettiamo nella ready queue??
+		//Faccio 
+		if(ACTIVE_PCB->kernel_start>0){
+
+			ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
+			ACTIVE_PCB->kernel_start=0;
+
+		}
+		
 		//Metto il processo nella Ready Queue
   		insertProcQ(ready_queue, ACTIVE_PCB);
 
@@ -58,10 +67,11 @@ void ContextSwitch(){
 	if(!ACTIVE_PCB->wallclock_start){
 	
 		//Assegno il tempo assoluto di inizio del processo
-		ACTIVE_PCB->wallclock_start=getTODLO();
+		ACTIVE_PCB->wallclock_start = getTODLO();
 	
 	}
 	
+
 	//Inizio a contare il tempo in user mode
 	ACTIVE_PCB->user_start = getTODLO();
 	
@@ -80,6 +90,7 @@ void Scheduling(){
 		
 		//termprint("Scheduler: coda dei processi non vuota \n");
 		//Faccio un context switch per prendere il processo successivo
+
 		ContextSwitch();
 	}
 

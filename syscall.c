@@ -1,14 +1,21 @@
 #include "include/syscall.h"
 
+void bp_time(){}
+
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){
     
+    // Incremento il tempo totale del kernel
+    // ACTIVE_PCB->kernel_total += getTODLO()-ACTIVE_PCB->kernel_total;
+
+    
     //Incremento il tempo totale del kernel
-    ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + getTODLO()-ACTIVE_PCB->kernel_start;
+    ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + (getTODLO()-ACTIVE_PCB->kernel_start);
     
     //Incremento il tempo totale dello user
-    ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
+    //ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
     
+        
     //Se ho un tempo user lo assegno 
     if(user != NULL){
 
@@ -45,7 +52,7 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
     if (tempPcb != NULL){ //Ha successo: cpid non NULL e tempPcb allocato correttamente
 
         //Assegno lo stato del nuovo processo figlio
-        SaveOldState(statep, &(tempPcb->p_s));
+        SaveOldAreaToPCB(statep, &(tempPcb->p_s));
 
         //Settiamo la priority
         tempPcb->priority = priority;
@@ -78,9 +85,6 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
 
 //SYSCALL 3
 int TerminateProcess(void * pid){
-
-    // L'ACTIVE PCB VA MESSO A NULL ALLA FINE DELLA SYSCALL
-
 
     // Int SYSCALL(TERMINATEPROCESS, void * pid, 0, 0)
     // Quando invocata, la SYS3 termina il processo
@@ -166,13 +170,16 @@ void Passeren(int *semaddr){
         state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
 
         //Copio lo stato della old area della sys nel processo che lo ha sollevato 
-        SaveOldState(oldarea, &(ACTIVE_PCB->p_s));
+        SaveOldAreaToPCB(oldarea, &(ACTIVE_PCB->p_s));
         
         //Salvo il valore del tempo in kernelmode
 
+        if(ACTIVE_PCB->kernel_start>0){
+            
 	    ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
         ACTIVE_PCB->kernel_start=0;
 
+        }
         //Metto il processo nella coda del semaforo
 	 	int ret = insertBlocked(semaddr, ACTIVE_PCB);
         
@@ -309,12 +316,48 @@ int SpecPassup(int type, struct state *old, struct state *nuovo){
     // richiamata una sola volta per tipo (pena la terminazione). Se
     // la system call ha successo restituisce 0, altrimenti -1.
 
-    
 
 
-    
-    
-    return 0;
+    //Se devo assegnare l-handler del livello superiore di una Sys o Bp e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    if(type == 0 && ACTIVE_PCB->SysOld != NULL && ACTIVE_PCB->SysNew != NULL ){
+        
+        //Assegno le aree
+        ACTIVE_PCB->SysOld = old;
+        ACTIVE_PCB->SysNew = nuovo;
+        
+        return 0;
+
+    }
+
+    //Se devo assegnare l-handler del livello superiore di una TLB e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    if(type == 1 && ACTIVE_PCB->TLBOld != NULL && ACTIVE_PCB->TLBNew != NULL ){
+        
+        //Assegno le aree
+        ACTIVE_PCB->TLBOld = old;
+        ACTIVE_PCB->TLBNew = nuovo;
+        
+        return 0;
+
+    }
+
+    //Se devo assegnare l-handler del livello superiore di una Program trap e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    if(type == 2 && ACTIVE_PCB->PTOld != NULL && ACTIVE_PCB->PTNew != NULL ){
+        
+        //Assegno le aree
+        ACTIVE_PCB->PTOld = old;
+        ACTIVE_PCB->PTNew = nuovo;
+        
+        return 0;
+
+    }
+
+    //Nessuno di questi: errore 
+    else{
+
+        return 1;
+
+    }
+
 }
 
 //SYSCALL 8
@@ -326,22 +369,20 @@ void getPid(void ** pid, void ** ppid){
     // l’identificativo del processo genitore a *ppid (se
     // ppid != NULL)
     
-    // Assegna l’identificativo del processo corrente a *pid
+    //Controllo se pid non è null allora faccio il dovuto assegnamento 
     if (pid != NULL){
 
-        *((pcb_t **)pid) = ACTIVE_PCB;
+        // Assegna l’identificativo del processo corrente a *pid
+        *pid = ACTIVE_PCB;
 
-        //assegna l'identificativo del processo genitore a *ppid
-        if (ppid != NULL){
+    }
 
-            if (ACTIVE_PCB->p_parent != NULL){
-            
-                *((pcb_t **)ppid) = ACTIVE_PCB->p_parent;
-            
-            }
-
-        }
-
+    //assegna l'identificativo del processo genitore a *ppid
+    if (ppid != NULL){
+        
+        //Assegno l'id del genitore
+        *ppid = ACTIVE_PCB->p_parent;
+        
     }
 
 }

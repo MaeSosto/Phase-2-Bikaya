@@ -131,7 +131,7 @@ struct pcb_t *initAllPCB(unsigned int functionAddress, int priority){
 }
 
 //Salvo lo stato della interrupt old area nel processo appena eseguito
-void SaveOldState(state_t* oldarea, state_t* processo){
+void SaveOldAreaToPCB(state_t* oldarea, state_t* processo){
 	
 	#ifdef TARGET_UMPS
 	
@@ -172,6 +172,54 @@ void SaveOldState(state_t* oldarea, state_t* processo){
 
 	#endif
 	
+}
+
+//Salvo lo stato del PCB nella old area
+void SavePCBToOldArea(state_t* processo, state_t* oldarea){
+
+	#ifdef TARGET_UMPS
+	
+		oldarea->entry_hi = processo->entry_hi;
+		oldarea->cause = 	processo->cause;
+		oldarea->status = 	processo->status;
+		oldarea->pc_epc = 	processo->pc_epc;
+		oldarea->hi = 		processo->hi;
+		oldarea->lo = 		processo->lo;
+		for(int i=0;i<29;i++){
+			
+			oldarea->gpr[i]=processo->gpr[i];
+		
+		}
+		
+	#endif
+	
+	#ifdef TARGET_UARM
+	
+		oldarea->a1 = 			processo->a1;
+		oldarea->a2 = 			processo->a2;
+		oldarea->a3 = 			processo->a3;
+		oldarea->a4 = 			processo->a4;
+		oldarea->v1 = 			processo->v1;
+		oldarea->v2 = 			processo->v2;
+		oldarea->v3 = 			processo->v3;
+		oldarea->v4 = 			processo->v4;
+		oldarea->v5 = 			processo->v5;
+		oldarea->v6 = 			processo->v6;
+		oldarea->sl = 			processo->sl;
+		oldarea->fp = 			processo->fp;
+		oldarea->ip = 			processo->ip;
+		oldarea->sp = 			processo->sp;
+		oldarea->lr = 			processo->lr;
+		oldarea->pc = 			processo->pc;
+		oldarea->cpsr = 		processo->cpsr;
+		oldarea->CP15_Control = processo->CP15_Control;
+		oldarea->CP15_EntryHi = processo->CP15_EntryHi;
+		oldarea->CP15_Cause = 	processo->CP15_Cause;
+		oldarea->TOD_Hi = 		processo->TOD_Hi;
+		oldarea->TOD_Low = 		processo->TOD_Low;
+
+	#endif
+
 }
 
 

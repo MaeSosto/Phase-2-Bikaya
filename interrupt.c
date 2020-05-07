@@ -1,19 +1,18 @@
 #include "include/interrupt.h"
 
-void teminal_rec(){}
-
-void bp_interrupt_terminal(){}
-void bp_interrupt_timer(){}
-void bp_disk(){}
-void bp_tape(){}
-void bp_network(){}
-void bp_printer(){}
-
 extern int tempo;
 
-void InterruptIntervalTimer(){
+//PROCESSOR LOCAL TIMER
+void InterruptPLC(){
+	
+	//????
+	// 	 setTIMER(TIME_SLICE);
+    //   scheduler();
 
-	bp_interrupt_timer();
+}
+
+//INTERVAL TIMER 2
+void InterruptIntervalTimer(){
 
 	//Setto il timer (ACK)
   	*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
@@ -22,47 +21,149 @@ void InterruptIntervalTimer(){
 
 }
 
-//TAPE 4
-void InterruptTape(){
+//DISK 3
+void InterruptDisk(){
 
-	bp_tape();
-
-	//termprint ("Interrupt: Gestisco l'int del tape ");
 	//Per tutti i device di questa linea 
 	for(int i = 0; i < DEV_PER_INT; i++){
 
 		//Controllo se l'interrupt è stato lanciato da questa linea
-		if( ((CDEV_BITMAP_ADDR(INT_TAPE))) == i){
+		if(Eccezione(3, i)){
+			
+			//Prendo il registro del device che ha lanciato l'interrupt
+			dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(INT_DISK, i);
+			
+			if(*Semaforo.disk[i].s_key < 0){
+								
+				//Sblocco il processo sul terminale in ricezione del device richiesto
+				Verhogen(Semaforo.disk[i].s_key);
 
-			//termprint("InterruptTape: gestisco il dispositivo \n ");
-			stampaInt(i);
-			termprint("\n");
+				//Aggiorno lo status del processo svegliato
+				GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+								
+			}
+			
+			else{
+
+				//Invio ACK
+				reg->command = CMD_ACK;
+			
+			}
+
+		}
+	
+	}
+
+}
+
+//TAPE 4
+void InterruptTape(){
+
+	//Per tutti i device di questa linea 
+	for(int i = 0; i < DEV_PER_INT; i++){
+
+		//Controllo se l'interrupt è stato lanciato da questa linea
+		if(Eccezione(4, i)){
 			
 			//Prendo il registro del device che ha lanciato l'interrupt
 			dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(INT_TAPE, i);
-
-			//Faccio la verhogen = sblocco il processo, lo sveglio
-			Verhogen(Semaforo.tape[i].s_key);
-			GOODMORNING_PCB->p_s.reg_v0 = reg->status;
-
-						
 			
+			if(*Semaforo.tape[i].s_key < 0){
+								
+				//Sblocco il processo sul terminale in ricezione del device richiesto
+				Verhogen(Semaforo.tape[i].s_key);
+
+				//Aggiorno lo status del processo svegliato
+				GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+								
+			}
 			
-			//termprint("InterruptTape: Faccio ACK \n ");
-			//Faccio ACK
-			reg->command = CMD_ACK;
+			else{
+
+				//Invio ACK
+				reg->command = CMD_ACK;
+			
+			}
 
 		}
+	
+	}
 
+}
+
+//NETWORK 5
+void InterruptNetwork(){
+
+	//Per tutti i device di questa linea 
+	for(int i = 0; i < DEV_PER_INT; i++){
+
+		//Controllo se l'interrupt è stato lanciato da questa linea
+		if(Eccezione(5, i)){
+			
+			//Prendo il registro del device che ha lanciato l'interrupt
+			dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(INT_UNUSED, i);
+			
+			if(*Semaforo.network[i].s_key < 0){
+								
+				//Sblocco il processo sul terminale in ricezione del device richiesto
+				Verhogen(Semaforo.network[i].s_key);
+
+				//Aggiorno lo status del processo svegliato
+				GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+								
+			}
+			
+			else{
+
+				//Invio ACK
+				reg->command = CMD_ACK;
+			
+			}
+
+		}
+	
+	}
+
+}
+
+//PRINTER 6
+void InterruptPrinter(){
+
+	//Per tutti i device di questa linea 
+	for(int i = 0; i < DEV_PER_INT; i++){
+
+		//Controllo se l'interrupt è stato lanciato da questa linea
+		if(Eccezione(6, i)){
+			
+			//Prendo il registro del device che ha lanciato l'interrupt
+			dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(INT_PRINTER, i);
+			
+			if(*Semaforo.printer[i].s_key < 0){
+								
+				//Sblocco il processo sul terminale in ricezione del device richiesto
+				Verhogen(Semaforo.printer[i].s_key);
+
+				//Aggiorno lo status del processo svegliato
+				GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+								
+			}
+			
+			else{
+
+				//Invio ACK
+				reg->command = CMD_ACK;
+			
+			}
+
+		}
+	
 	}
 
 }
 
 //TERMINAL 7
 void InterruptTerminal(){
-
-	bp_interrupt_terminal();
-
+	
 	//Per tutti i device di questa linea 
 	for(int i = 0; i < DEV_PER_INT; i++){
 
