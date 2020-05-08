@@ -11,7 +11,7 @@ void Aging(){
 
 	//Aumentiamo di 1 tutte le priorità dei processi che non sono in esecuzione
 	list_for_each(tempList, ready_queue){
-		bp_aging();
+
 		tempPcb = container_of(tempList, struct pcb_t, p_next);
 		tempPcb->priority = tempPcb->priority + 1;
 

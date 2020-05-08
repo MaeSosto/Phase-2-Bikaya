@@ -1,6 +1,12 @@
 #include "include/syscall.h"
 
-void bp_time(){}
+void bp_term_proc_non_corrente(){}
+void bp_term_current_proc(){}
+void bp_term_figlio_not_found(){}
+void bp_term_ho_processi_figli(){}
+void bp_term_proc_in_semd(){}
+void bp_term_elimino_padre(){}
+void bp_BELLAAAAAA(){}
 
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){
@@ -95,37 +101,151 @@ int TerminateProcess(void * pid){
     // – Restituisce 0 se ha successo, -1 per errore (e.g. il
     // pid non corrisponde a un processo esistente).
 
-    struct pcb_t *tempPcb;
+    //Questo è il processo da terminare
+    pcb_t *tempPcb;
 
-    tempPcb = pid;
+    //Il processo da eliminare è il corrente 
+    if(pid == NULL || pid == 0){
 
-    if(!tempPcb){
-        
-        return -1;
+        bp_term_current_proc();
+
+        //Dico che il processo da eliminare è il corrente
+        tempPcb = ACTIVE_PCB;
+
+        //Quando lo eliminerò non avrò più un processo corrente
+        ACTIVE_PCB = NULL;
 
     }
 
+    //Il processo da eliminare non è il corrente
     else{
 
-        //Se il processo che considero è uguale a null allora termino il processo corrente
-        if(pid == NULL){
-            
-            tempPcb = ACTIVE_PCB;
-            ACTIVE_PCB = NULL;
-            
-        }
-
-        //Rimuovo la progenie
-        outChildBlocked(tempPcb); 
-
-        //Termino il processo e lo libero rimuovendolo dalla ready queue
-        freePcb(tempPcb); 
-
-        ACTIVE_PCB = NULL;
+        bp_term_proc_non_corrente();
         
-        return 0;
+        //Se il processo da eliminare non è il corrente allora prendo quello in input
+        tempPcb = pid;
+
+        //Se il processo da eliminare non è il corrente allora fa parte della progenie del corrente, lo cerco nella progenie del corrente e assegno true al flag se lo trovo
+        int flag = FALSE;
+        //pcb_t *figlio = tempPcb->p_child;
+
+        //Controllo se il il processo che voglio eliminare è figlio del proceesso attuale
+        // pcb_t* i;
+        // //struct list_head* sentinella = tempPcb->p_child;
+        // list_for_each_entry(i, &tempPcb->p_child, p_sib){
+
+        //     if(i==tempPcb){
+                
+        //         flag = TRUE;
+                
+        //     }
+        
+        // }
+
+        // //Se non ho trovato il processo da eliminare come figlio del processo corrente allora errore
+        // if(!flag){
+            
+        //     bp_term_figlio_not_found();
+
+        //     return -1;
+        
+        // }      
+        
+        //Pcb del primo figlio
+        //SI BLOCCA QUA E VA IN TRAPPPPPPP SKSKSKSKSKS
+        pcb_t *primofiglio = container_of(list_next(&tempPcb->p_child),struct pcb_t, p_sib);
+        struct list_head *tempList = NULL;
+        struct pcb_t *value = NULL;
+
+        list_for_each(tempList, &(primofiglio->p_sib)){
+            
+            value = container_of(tempList, struct pcb_t, p_sib);            
+            if(value==tempPcb){
+                
+                flag = TRUE;
+                
+            }
+
+        }
+        bp_BELLAAAAAA();
+        //Se non ho trovato il processo da eliminare come figlio del processo corrente allora errore
+        if(!flag){
+            
+            bp_term_figlio_not_found();
+
+            return -1;
+        
+        } 
+        
     }
 
+    //se il processo da eliminare non ha padre, vuol dire che è il root processo, errore
+    if(tempPcb->p_parent == NULL){
+
+        bp_term_elimino_padre();
+
+        return -1;
+        
+    }
+        
+        
+
+    //Controllo se il processo da eliminare ha figli
+    if(!emptyChild(tempPcb)){
+        
+        bp_term_ho_processi_figli();
+        //Devo dire che tutti i figli di pid diventano ora figli del padre di pid
+
+        pcb_t *padre = tempPcb->p_parent;
+
+        pcb_t *figlio;
+
+        //Assegno il nuovo padre a tutti i figli di tempPCB
+        do{
+            
+            //Prendo il figlio
+            figlio = removeChild(tempPcb);
+
+            //Assegno il figlio come figlio del padre
+            insertChild(padre, figlio);
+
+        }while(figlio != NULL);
+
+    }
+
+    
+
+    //Elimino il tempPcb dalla lista di figli del padre
+    outChild(tempPcb);   
+
+    //Allora il processo da eliminare è in un semaforo
+    if(tempPcb->p_semkey != NULL){
+
+        bp_term_proc_in_semd();
+
+        //Prendo il semaforo sulla quale è bloccato il processo
+        int *semaforo = tempPcb->p_semkey;
+
+        //Sblocco il processo dal semaforo
+        outBlocked(tempPcb);
+        
+        //Aggiorno il numero dei processi bloccati su quel semaforo
+        *(semaforo)+=1;
+
+        //Aggiorno il contatore
+        BLOCK_COUNT--;
+
+        //Rimuovo il processo dalla ready queue
+        outProcQ(ready_queue,tempPcb);
+    
+    }
+
+    freePcb(tempPcb);
+
+    //A questo punto chiamo lo scheduler
+    Scheduling();
+
+    return 0;
 }
 
 //SYSCALL 4 - risveglia il rocesso dall'attesa
@@ -180,6 +300,7 @@ void Passeren(int *semaddr){
         ACTIVE_PCB->kernel_start=0;
 
         }
+        
         //Metto il processo nella coda del semaforo
 	 	int ret = insertBlocked(semaddr, ACTIVE_PCB);
         
