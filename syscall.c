@@ -6,7 +6,10 @@ void bp_term_figlio_not_found(){}
 void bp_term_ho_processi_figli(){}
 void bp_term_proc_in_semd(){}
 void bp_term_elimino_padre(){}
-void bp_BELLAAAAAA(){}
+
+void bp_type_SYS(){}
+void bp_type_TLB(){}
+void bp_type_TRAP(){}
 
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){
@@ -104,7 +107,7 @@ int TerminateProcess(void * pid){
     //Questo è il processo da terminare
     pcb_t *tempPcb;
 
-    //Il processo da eliminare è il corrente 
+    //Il processo da eliminare è quello corrente 
     if(pid == NULL || pid == 0){
 
         bp_term_current_proc();
@@ -112,113 +115,47 @@ int TerminateProcess(void * pid){
         //Dico che il processo da eliminare è il corrente
         tempPcb = ACTIVE_PCB;
 
-        //Quando lo eliminerò non avrò più un processo corrente
-        ACTIVE_PCB = NULL;
-
     }
 
     //Il processo da eliminare non è il corrente
     else{
 
         bp_term_proc_non_corrente();
-        
-        //Se il processo da eliminare non è il corrente allora prendo quello in input
+
         tempPcb = pid;
 
-        //Se il processo da eliminare non è il corrente allora fa parte della progenie del corrente, lo cerco nella progenie del corrente e assegno true al flag se lo trovo
-        int flag = FALSE;
-        //pcb_t *figlio = tempPcb->p_child;
-
-        //Controllo se il il processo che voglio eliminare è figlio del proceesso attuale
-        // pcb_t* i;
-        // //struct list_head* sentinella = tempPcb->p_child;
-        // list_for_each_entry(i, &tempPcb->p_child, p_sib){
-
-        //     if(i==tempPcb){
-                
-        //         flag = TRUE;
-                
-        //     }
-        
-        // }
-
-        // //Se non ho trovato il processo da eliminare come figlio del processo corrente allora errore
-        // if(!flag){
-            
-        //     bp_term_figlio_not_found();
-
-        //     return -1;
-        
-        // }      
-        
-        //Pcb del primo figlio
-        //SI BLOCCA QUA E VA IN TRAPPPPPPP SKSKSKSKSKS
-        pcb_t *primofiglio = container_of(list_next(&tempPcb->p_child),struct pcb_t, p_sib);
-        struct list_head *tempList = NULL;
-        struct pcb_t *value = NULL;
-
-        list_for_each(tempList, &(primofiglio->p_sib)){
-            
-            value = container_of(tempList, struct pcb_t, p_sib);            
-            if(value==tempPcb){
-                
-                flag = TRUE;
-                
-            }
-
-        }
-        bp_BELLAAAAAA();
-        //Se non ho trovato il processo da eliminare come figlio del processo corrente allora errore
-        if(!flag){
+        //Controllo se tempPCB è figlio di ACTIVEPCB, se non fa parte dela progenie è errore
+        if( !isChild(ACTIVE_PCB, tempPcb) || (pid == NULL) ){
             
             bp_term_figlio_not_found();
-
+            
             return -1;
-        
-        } 
+
+        }
+
+        //Rimuove il PCB puntato da p dalla lista dei figli del padre
+        outChild(tempPcb);
         
     }
 
-    //se il processo da eliminare non ha padre, vuol dire che è il root processo, errore
-    if(tempPcb->p_parent == NULL){
-
-        bp_term_elimino_padre();
-
-        return -1;
-        
-    }
-        
-        
+    pcb_t *figlio;
 
     //Controllo se il processo da eliminare ha figli
-    if(!emptyChild(tempPcb)){
-        
-        bp_term_ho_processi_figli();
-        //Devo dire che tutti i figli di pid diventano ora figli del padre di pid
+    if( !emptyChild(tempPcb) ){
 
-        pcb_t *padre = tempPcb->p_parent;
-
-        pcb_t *figlio;
-
-        //Assegno il nuovo padre a tutti i figli di tempPCB
         do{
-            
-            //Prendo il figlio
-            figlio = removeChild(tempPcb);
 
-            //Assegno il figlio come figlio del padre
-            insertChild(padre, figlio);
+            //Elimino la progenie del tempPcb
+            figlio = removeChild(tempPcb);
+            
+            TerminateProcess(figlio);
 
         }while(figlio != NULL);
 
     }
 
     
-
-    //Elimino il tempPcb dalla lista di figli del padre
-    outChild(tempPcb);   
-
-    //Allora il processo da eliminare è in un semaforo
+    //Controllo se il processo da eliminare è bloccato su un semaforo
     if(tempPcb->p_semkey != NULL){
 
         bp_term_proc_in_semd();
@@ -235,17 +172,23 @@ int TerminateProcess(void * pid){
         //Aggiorno il contatore
         BLOCK_COUNT--;
 
-        //Rimuovo il processo dalla ready queue
-        outProcQ(ready_queue,tempPcb);
+    }
+
+    //Rimuovo il processo dalla ready queue
+    outProcQ(ready_queue,tempPcb);
+
+    //Controllo se il processo da eliminare è quello attivo
+    if(tempPcb == ACTIVE_PCB){
+
+        //Setto il processo attivo a NULL
+        ACTIVE_PCB = NULL;
     
     }
 
     freePcb(tempPcb);
 
-    //A questo punto chiamo lo scheduler
-    Scheduling();
-
     return 0;
+    
 }
 
 //SYSCALL 4 - risveglia il rocesso dall'attesa
@@ -439,9 +382,11 @@ int SpecPassup(int type, struct state *old, struct state *nuovo){
 
 
 
-    //Se devo assegnare l-handler del livello superiore di una Sys o Bp e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
-    if(type == 0 && ACTIVE_PCB->SysOld != NULL && ACTIVE_PCB->SysNew != NULL ){
+    //Se devo assegnare l'handler del livello superiore di una Sys o Bp e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    if(type == 0 && ACTIVE_PCB->SysOld == NULL && ACTIVE_PCB->SysNew == NULL ){
         
+        bp_type_SYS();
+
         //Assegno le aree
         ACTIVE_PCB->SysOld = old;
         ACTIVE_PCB->SysNew = nuovo;
@@ -450,9 +395,11 @@ int SpecPassup(int type, struct state *old, struct state *nuovo){
 
     }
 
-    //Se devo assegnare l-handler del livello superiore di una TLB e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
-    if(type == 1 && ACTIVE_PCB->TLBOld != NULL && ACTIVE_PCB->TLBNew != NULL ){
+    //Se devo assegnare l'handler del livello superiore di una TLB e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    if(type == 1 && ACTIVE_PCB->TLBOld == NULL && ACTIVE_PCB->TLBNew == NULL ){
         
+        bp_type_TLB();
+
         //Assegno le aree
         ACTIVE_PCB->TLBOld = old;
         ACTIVE_PCB->TLBNew = nuovo;
@@ -461,9 +408,11 @@ int SpecPassup(int type, struct state *old, struct state *nuovo){
 
     }
 
-    //Se devo assegnare l-handler del livello superiore di una Program trap e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
-    if(type == 2 && ACTIVE_PCB->PTOld != NULL && ACTIVE_PCB->PTNew != NULL ){
+    //Se devo assegnare l'handler del livello superiore di una Program trap e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    if(type == 2 && ACTIVE_PCB->PTOld == NULL && ACTIVE_PCB->PTNew == NULL ){
         
+        bp_type_TRAP();
+
         //Assegno le aree
         ACTIVE_PCB->PTOld = old;
         ACTIVE_PCB->PTNew = nuovo;
@@ -475,7 +424,7 @@ int SpecPassup(int type, struct state *old, struct state *nuovo){
     //Nessuno di questi: errore 
     else{
 
-        return 1;
+        return -1;
 
     }
 

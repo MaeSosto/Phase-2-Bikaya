@@ -58,9 +58,6 @@
 	//Inizializzo i Pcb
 	struct pcb_t *initAllPCB(unsigned int functionAddress, int priority);
 
-	//Salvo lo stato della interrupt old area nel processo appena eseguito
-	void SaveOldAreaToPCB(state_t* oldarea, state_t* processo);
-
 	//Salvo lo stato del PCB nella old area
 	void SavePCBToOldArea(state_t* processo, state_t* oldarea);
 
@@ -78,5 +75,8 @@
 
 	//Restituisce 1 se l'eccezione è stata lanciata dal numero della linea e dal device in input
 	int Eccezione(int linea, int device);
+
+	//Funzione che controlla se cercare è figlio di padre (o se sta nella sua progenie)
+	int isChild(pcb_t *padre, pcb_t *cercare);
 
 #endif

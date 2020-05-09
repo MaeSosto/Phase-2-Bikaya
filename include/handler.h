@@ -38,7 +38,12 @@
     #define BUS_TODLOW  0x1000001c
     #define BUS_TODHIGH 0x10000018
     #define getTODLO() (*((unsigned int *)BUS_TODLOW))
-
+    
+    //OLD AREAS
+    #define TRAP_OLDAREA 0x20000230
+    #define TLB_OLDAREA 0x20000118
+    #define SYSCALL_OLDAREA 0x20000348
+    
     extern struct pcb_t *ACTIVE_PCB;
     extern struct list_head* ready_queue;
 

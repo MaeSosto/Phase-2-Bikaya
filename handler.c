@@ -253,7 +253,7 @@ void syscallHandler(){
 		else if(AREA->reg_a0 == TERMINATEPROCESS){
 			
 			termprint("SYS 3 \n");
-			ritorno = TerminateProcess((void **)AREA->reg_a1);
+			ritorno = TerminateProcess((void *)AREA->reg_a1);
 
 		}
 
@@ -289,7 +289,6 @@ void syscallHandler(){
 		//SYSCALL 7
 		else if(AREA->reg_a0 == SPECPASSUP){
 			
-			termprint("SYS 7 \n");
 			ritorno = SpecPassup(AREA->reg_a1, (struct state*)AREA->reg_a2, (struct state*)AREA->reg_a3);
 			
 		}
@@ -337,7 +336,7 @@ void syscallHandler(){
 
 			//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
 			SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->SysOld);
-			
+			SavePCBToOldArea(&(ACTIVE_PCB->p_s), (state_t*)SYSCALL_OLDAREA);
 			//Carico lo stato nella new area
 			LDST(ACTIVE_PCB->SysNew);
 		}
@@ -404,6 +403,9 @@ void trapHandler(){
 		//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
 		SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->PTOld);
 		
+		SavePCBToOldArea(&(ACTIVE_PCB->p_s), (state_t*)TRAP_OLDAREA);
+
+
 		//Carico lo stato nella new area
 		LDST(ACTIVE_PCB->PTNew);
 	}
@@ -429,7 +431,7 @@ void tlbHandler(){
 
 		//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
 		SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->TLBOld);
-		
+		SavePCBToOldArea(&(ACTIVE_PCB->p_s), (state_t*)TLB_OLDAREA);
 		//Carico lo stato nella new area
 		LDST(ACTIVE_PCB->TLBNew);
 	}

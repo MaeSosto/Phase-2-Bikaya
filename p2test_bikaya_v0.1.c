@@ -21,6 +21,7 @@
  */
 
 void bp_tempo(){}
+void bp_test_prof(){}
 
 #ifdef TARGET_UMPS
 #include "umps/libumps.h"
@@ -435,6 +436,8 @@ void p4prog() {
         default:
             print("pgmTrapHandler - other program trap\n");
     }
+
+bp_test_prof();
 
     LDST(&pstat_o); /* "return" to old area (that changed meanwhile) */
 }

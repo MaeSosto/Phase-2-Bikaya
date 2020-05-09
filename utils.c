@@ -130,49 +130,6 @@ struct pcb_t *initAllPCB(unsigned int functionAddress, int priority){
   
 }
 
-//Salvo lo stato della interrupt old area nel processo appena eseguito
-void SaveOldAreaToPCB(state_t* oldarea, state_t* processo){
-	
-	#ifdef TARGET_UMPS
-	
-		processo->entry_hi = oldarea->entry_hi;
-		processo->cause = oldarea->cause;
-		processo->status = oldarea->status;
-		processo->pc_epc = oldarea->pc_epc;
-		processo->hi = oldarea->hi;
-		processo->lo = oldarea->lo;
-		for(int i=0;i<29;i++){processo->gpr[i]=oldarea->gpr[i];}
-		
-	#endif
-	
-	#ifdef TARGET_UARM
-	
-		processo->a1 = oldarea->a1;
-		processo->a2 = oldarea->a2;
-		processo->a3 = oldarea->a3;
-		processo->a4 = oldarea->a4;
-		processo->v1 = oldarea->v1;
-		processo->v2 = oldarea->v2;
-		processo->v3 = oldarea->v3;
-		processo->v4 = oldarea->v4;
-		processo->v5 = oldarea->v5;
-		processo->v6 = oldarea->v6;
-		processo->sl = oldarea->sl;
-		processo->fp = oldarea->fp;
-		processo->ip = oldarea->ip;
-		processo->sp = oldarea->sp;
-		processo->lr = oldarea->lr;
-		processo->pc = oldarea->pc;
-		processo->cpsr = oldarea->cpsr;
-		processo->CP15_Control = oldarea->CP15_Control;
-		processo->CP15_EntryHi = oldarea->CP15_EntryHi;
-		processo->CP15_Cause = oldarea->CP15_Cause;
-		processo->TOD_Hi = oldarea->TOD_Hi;
-		processo->TOD_Low = oldarea->TOD_Low;
-
-	#endif
-	
-}
 
 //Salvo lo stato del PCB nella old area
 void SavePCBToOldArea(state_t* processo, state_t* oldarea){
@@ -319,5 +276,26 @@ void stampaInt(int n){
 	if(n == 7) termprint("SETTE \n");
 	if(n == 8) termprint("OTTO \n");
 	if(n > 8) termprint("ALTRO \n");
+
+}
+
+//Funzione che controlla se cercare è figlio di padre (o se sta nella sua progenie)
+int isChild(pcb_t *padre, pcb_t *cercare){
+
+	int appoggio = 0;
+
+	if(padre == cercare->p_parent){
+
+		//Ho trovato 
+		return 1;
+
+	}
+	
+	//Quello che cerco non è uguale al padre quindi potrebbe essere figlio dei figli del padre
+	else{
+
+		return appoggio || isChild(padre, cercare->p_parent);
+
+	}	
 
 }
