@@ -13,8 +13,7 @@
         #include "umps/arch.h"
         #include "umps/cp0.h"
         #include <umps/libumps.h>
-        #define SYSBK_OLDAREA 0x20000348
-        
+            
         /* Returns 1 if the interrupt int_no is pending */
         #define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 8)))
         
@@ -28,7 +27,15 @@
         #include <uarm/uARMtypes.h>
         #include <uarm/arch.h>
         #include <uarm/libuarm.h>
-        extern void tprint(char* str);
+
+        /*
+        * CP0 Cause fields
+        */
+        #define CAUSE_EXCCODE_MASK     0x0000007c
+        #define CAUSE_EXCCODE_BIT      2
+        #define CAUSE_GET_EXCCODE(x)   (((x) & CAUSE_EXCCODE_MASK) >> CAUSE_EXCCODE_BIT)
+
+        #define EXC_BP EXC_BREAKPOINT
 
         //PER UARM VEDI FILE UARMcost.h riga 164
         //#define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 24)))
@@ -38,12 +45,7 @@
     #define BUS_TODLOW  0x1000001c
     #define BUS_TODHIGH 0x10000018
     #define getTODLO() (*((unsigned int *)BUS_TODLOW))
-    
-    //OLD AREAS
-    #define TRAP_OLDAREA 0x20000230
-    #define TLB_OLDAREA 0x20000118
-    #define SYSCALL_OLDAREA 0x20000348
-    
+        
     extern struct pcb_t *ACTIVE_PCB;
     extern struct list_head* ready_queue;
 

@@ -61,7 +61,7 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
     if (tempPcb != NULL){ //Ha successo: cpid non NULL e tempPcb allocato correttamente
 
         //Assegno lo stato del nuovo processo figlio
-        SaveOldAreaToPCB(statep, &(tempPcb->p_s));
+        SavePCBToOldArea(statep, &(tempPcb->p_s));
 
         //Settiamo la priority
         tempPcb->priority = priority;
@@ -110,7 +110,7 @@ int TerminateProcess(void * pid){
     //Il processo da eliminare è quello corrente 
     if(pid == NULL || pid == 0){
 
-        bp_term_current_proc();
+        
 
         //Dico che il processo da eliminare è il corrente
         tempPcb = ACTIVE_PCB;
@@ -124,7 +124,11 @@ int TerminateProcess(void * pid){
 
         tempPcb = pid;
 
-        //Controllo se tempPCB è figlio di ACTIVEPCB, se non fa parte dela progenie è errore
+        if(tempPcb->p_parent==NULL){
+            bp_term_current_proc();
+        }
+
+        //Controllo se tempPCB è nella progenie di ACTIVEPCB, se non fa parte dela progenie è errore
         if( !isChild(ACTIVE_PCB, tempPcb) || (pid == NULL) ){
             
             bp_term_figlio_not_found();
@@ -146,9 +150,11 @@ int TerminateProcess(void * pid){
         do{
 
             //Elimino la progenie del tempPcb
-            figlio = removeChild(tempPcb);
+            figlio = removeChildNonOrfano(tempPcb);
             
             TerminateProcess(figlio);
+            
+
 
         }while(figlio != NULL);
 
@@ -230,17 +236,17 @@ void Passeren(int *semaddr){
     if (*semaddr < 0){
         
         //Salvo i registri dell'old area della sys al processo 
-        state_t* oldarea = ((state_t*)SYSCALL_OLDAREA);
+        state_t* oldarea = ((state_t*)SYSBK_OLDAREA);
 
         //Copio lo stato della old area della sys nel processo che lo ha sollevato 
-        SaveOldAreaToPCB(oldarea, &(ACTIVE_PCB->p_s));
+        SavePCBToOldArea(oldarea, &(ACTIVE_PCB->p_s));
         
         //Salvo il valore del tempo in kernelmode
 
-        if(ACTIVE_PCB->kernel_start>0){
+        if(ACTIVE_PCB->kernel_start > 0){
             
-	    ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
-        ACTIVE_PCB->kernel_start=0;
+            ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+            ACTIVE_PCB->kernel_start = 0;
 
         }
         
@@ -366,7 +372,7 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
 }
 
 //SYSCALL 7
-int SpecPassup(int type, struct state *old, struct state *nuovo){
+int SpecPassup(int type, state_t *old, state_t *nuovo){
 
     // int SYSCALL(SPECPASSUP, int type, state_t *old, state_t *new)
     // – Questa chiamata registra quale handler di livello superiore
@@ -379,13 +385,56 @@ int SpecPassup(int type, struct state *old, struct state *nuovo){
     // presente nell’area new. La system call deve essere
     // richiamata una sola volta per tipo (pena la terminazione). Se
     // la system call ha successo restituisce 0, altrimenti -1.
+/*
+    if((ACTIVE_PCB->SysOld != NULL || ACTIVE_PCB->SysNew != NULL) && type == 0)
+		return -1;
 
+	if((ACTIVE_PCB->TLBOld != NULL || ACTIVE_PCB->TLBNew != NULL) && type == 1)
+		return -1;
 
+	if((ACTIVE_PCB->PTOld != NULL || ACTIVE_PCB->PTOld != NULL) && type == 2)
+		return -1;
+
+	switch(type){
+		case 0:
+
+			//caso syscall/breakpoint
+			ACTIVE_PCB->SysOld = old;
+			ACTIVE_PCB->SysNew = nuovo;
+			return 0;
+
+			break;
+
+		case 1:
+
+			//caso TLB
+			ACTIVE_PCB->TLBOld = old;
+			ACTIVE_PCB->TLBNew = nuovo;
+			return 0;
+
+			break;
+
+		case 2:
+
+			//caso Program Trap
+			ACTIVE_PCB->PTOld = old;
+			ACTIVE_PCB->PTNew = nuovo;
+			return 0;
+
+			break;
+
+		default:
+
+			return -1;
+
+			break;
+	}
+*/
 
     //Se devo assegnare l'handler del livello superiore di una Sys o Bp e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
     if(type == 0 && ACTIVE_PCB->SysOld == NULL && ACTIVE_PCB->SysNew == NULL ){
         
-        bp_type_SYS();
+        //bp_type_SYS();
 
         //Assegno le aree
         ACTIVE_PCB->SysOld = old;
@@ -398,7 +447,7 @@ int SpecPassup(int type, struct state *old, struct state *nuovo){
     //Se devo assegnare l'handler del livello superiore di una TLB e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
     if(type == 1 && ACTIVE_PCB->TLBOld == NULL && ACTIVE_PCB->TLBNew == NULL ){
         
-        bp_type_TLB();
+        //bp_type_TLB();
 
         //Assegno le aree
         ACTIVE_PCB->TLBOld = old;
@@ -411,7 +460,7 @@ int SpecPassup(int type, struct state *old, struct state *nuovo){
     //Se devo assegnare l'handler del livello superiore di una Program trap e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
     if(type == 2 && ACTIVE_PCB->PTOld == NULL && ACTIVE_PCB->PTNew == NULL ){
         
-        bp_type_TRAP();
+        //bp_type_TRAP();
 
         //Assegno le aree
         ACTIVE_PCB->PTOld = old;

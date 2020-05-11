@@ -1,92 +1,97 @@
 #include "include/utils.h"
 
+void isChild_TRUE(){}
+void isChild_FALSE(){}
+void isChild_ELSE(){}
+
 //Inizializzo le Areas
 void setAreas(){
 
-  #ifdef TARGET_UMPS
+	#ifdef TARGET_UMPS
 
-	state_t *SYSCALL = (state_t*) SYSCALL_NEWAREA;
-    SYSCALL->pc_epc = (unsigned int)syscallHandler;
-    SYSCALL->reg_sp = RAMTOP; 
-    //settiamo i bit a 0
-	SYSCALL->status = SYSCALL->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
-    SYSCALL->status = SYSCALL->status & ~STATUS_IEp;		//disabilito IEp
-	SYSCALL->status = SYSCALL->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
-	SYSCALL->status = SYSCALL->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
-    //SYSCALL->status = SYSCALL->status | STATUS_IEp;
-    SYSCALL->status = SYSCALL->status & ~STATUS_VMc;		//disabilito virtual memory OK
-	SYSCALL->status = SYSCALL->status | STATUS_CU0;			//abilito il 28-esimo bit CU[0]
+		state_t *SYSCALL = (state_t*) SYSBK_NEWAREA;
+		SYSCALL->pc_epc = (unsigned int)syscallHandler;
+		SYSCALL->reg_sp = RAMTOP; 
+		//settiamo i bit a 0
+		SYSCALL->status = SYSCALL->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
+		SYSCALL->status = SYSCALL->status & ~STATUS_IEp;		//disabilito IEp
+		SYSCALL->status = SYSCALL->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
+		SYSCALL->status = SYSCALL->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
+		//SYSCALL->status = SYSCALL->status | STATUS_IEp;
+		SYSCALL->status = SYSCALL->status & ~STATUS_VMc;		//disabilito virtual memory OK
+		SYSCALL->status = SYSCALL->status | STATUS_CU0;			//abilito il 28-esimo bit CU[0]
 
-    state_t *TRAP = (state_t*) TRAP_NEWAREA;
-    TRAP->pc_epc = (unsigned int)trapHandler;
-    TRAP->reg_sp = RAMTOP; 
-    TRAP->status = TRAP->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
-    TRAP->status = TRAP->status & ~STATUS_IEp;		//disabilito IEp
-	TRAP->status = TRAP->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
-	TRAP->status = TRAP->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
-    //TRAP->status = TRAP->status | STATUS_IEp;
-    TRAP->status = TRAP->status & ~STATUS_VMc;		//disabilito virtual memory OK
-	TRAP->status = TRAP->status | STATUS_CU0;
-    
-    state_t *TLB = (state_t*) TLB_NEWAREA;
-    TLB->pc_epc = (unsigned int)tlbHandler;
-    TLB->reg_sp = RAMTOP; 
-    TLB->status = TLB->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
-    TLB->status = TLB->status & ~STATUS_IEp;		//disabilito IEp
-	TLB->status = TLB->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
-	TLB->status = TLB->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
-    //TLB->status = TLB->status | STATUS_IEp;
-    TLB->status = TLB->status & ~STATUS_VMc;		//disabilito virtual memory OK
-	TLB->status = TLB->status | STATUS_CU0;
-    
-    state_t *INTERRUPT = (state_t*) INTERRUPT_NEWAREA;
-    INTERRUPT->pc_epc = (unsigned int)interruptHandler;
-    INTERRUPT->reg_sp = RAMTOP; 
-    INTERRUPT->status = INTERRUPT->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
-    INTERRUPT->status = INTERRUPT->status & ~STATUS_IEp;		//disabilito IEp
-	INTERRUPT->status = INTERRUPT->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
-	INTERRUPT->status = INTERRUPT->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
-    //INTERRUPTLB->status = TLB->status | STATUS_IEp;
-    INTERRUPT->status = INTERRUPT->status & ~STATUS_VMc;		//disabilito virtual memory OK
-	INTERRUPT->status = INTERRUPT->status | STATUS_CU0;
+		state_t *TRAP = (state_t*) PGMTRAP_NEWAREA;
+		TRAP->pc_epc = (unsigned int)trapHandler;
+		TRAP->reg_sp = RAMTOP; 
+		TRAP->status = TRAP->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
+		TRAP->status = TRAP->status & ~STATUS_IEp;		//disabilito IEp
+		TRAP->status = TRAP->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
+		TRAP->status = TRAP->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
+		//TRAP->status = TRAP->status | STATUS_IEp;
+		TRAP->status = TRAP->status & ~STATUS_VMc;		//disabilito virtual memory OK
+		TRAP->status = TRAP->status | STATUS_CU0;
 
-  #endif
+		state_t *TLB = (state_t*) TLB_NEWAREA;
+		TLB->pc_epc = (unsigned int)tlbHandler;
+		TLB->reg_sp = RAMTOP; 
+		TLB->status = TLB->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
+		TLB->status = TLB->status & ~STATUS_IEp;		//disabilito IEp
+		TLB->status = TLB->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
+		TLB->status = TLB->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
+		//TLB->status = TLB->status | STATUS_IEp;
+		TLB->status = TLB->status & ~STATUS_VMc;		//disabilito virtual memory OK
+		TLB->status = TLB->status | STATUS_CU0;
+
+		state_t *INTERRUPT = (state_t*) INTERRUPT_NEWAREA;
+		INTERRUPT->pc_epc = (unsigned int)interruptHandler;
+		INTERRUPT->reg_sp = RAMTOP; 
+		INTERRUPT->status = INTERRUPT->status & ~STATUS_IEc;    	//0 = tutti gli interrupt disabilitati   
+		INTERRUPT->status = INTERRUPT->status & ~STATUS_IEp;		//disabilito IEp
+		INTERRUPT->status = INTERRUPT->status & ~STATUS_IM_MASK; 	//disabilito maschera interrupt
+		INTERRUPT->status = INTERRUPT->status & ~STATUS_KUc;		//abilito kernel mode KUc=0 OK
+		//INTERRUPTLB->status = TLB->status | STATUS_IEp;
+		INTERRUPT->status = INTERRUPT->status & ~STATUS_VMc;		//disabilito virtual memory OK
+		INTERRUPT->status = INTERRUPT->status | STATUS_CU0;
+
+	#endif
   
-//   #ifdef TARGET_UARM
+	#ifdef TARGET_UARM
 
-//     state_t *SYSCALL = (state_t*) SYSBK_NEWAREA;
-//     SYSCALL->pc = (unsigned int)syscallHandler;  //assegno la funzione che gestisce la syscall
-//     SYSCALL->sp = RAM_TOP;  //setto ramtop
-//     SYSCALL->cpsr = STATUS_DISABLE_INT(SYSCALL->cpsr); //Disabilito gli interrupt
-//     SYSCALL->cpsr = STATUS_DISABLE_TIMER(SYSCALL->cpsr);
-//     SYSCALL->cpsr = SYSCALL->cpsr | STATUS_SYS_MODE; 
-//     SYSCALL->CP15_Control = CP15_DISABLE_VM(SYSCALL->CP15_Control); //disabilito virtual memory
+		state_t *SYSCALL = (state_t*) SYSBK_NEWAREA;
+		SYSCALL->pc = (unsigned int)syscallHandler;  //assegno la funzione che gestisce la syscall
+		SYSCALL->sp = RAM_TOP;  //setto ramtop
+		SYSCALL->cpsr = STATUS_DISABLE_INT(SYSCALL->cpsr); //Disabilito gli interrupt
+		SYSCALL->cpsr = STATUS_DISABLE_TIMER(SYSCALL->cpsr);
+		SYSCALL->cpsr = SYSCALL->cpsr &  ~STATUS_SYS_MODE;  //Disabilito user mode = abilito kernel mode
+		SYSCALL->CP15_Control = CP15_DISABLE_VM(SYSCALL->CP15_Control); //disabilito virtual memory
 
-//     state_t *TRAP = (state_t*) PGMTRAP_NEWAREA;
-//     TRAP->pc = (unsigned int)trapHandler;
-//     TRAP->sp = RAM_TOP;
-//     TRAP->cpsr = STATUS_DISABLE_INT(TRAP->cpsr);
-//     TRAP->cpsr = STATUS_DISABLE_TIMER(TRAP->cpsr);
-//     TRAP->cpsr = TRAP->cpsr | STATUS_SYS_MODE; 
-//     TRAP->CP15_Control = CP15_DISABLE_VM(TRAP->CP15_Control);
+		state_t *TRAP = (state_t*) PGMTRAP_NEWAREA;
+		TRAP->pc = (unsigned int)trapHandler;
+		TRAP->sp = RAM_TOP;
+		TRAP->cpsr = STATUS_DISABLE_INT(TRAP->cpsr);
+		TRAP->cpsr = STATUS_DISABLE_TIMER(TRAP->cpsr);
+		TRAP->cpsr = TRAP->cpsr &  ~STATUS_SYS_MODE; 
+		TRAP->CP15_Control = CP15_DISABLE_VM(TRAP->CP15_Control);
 
-//     state_t *TLB = (state_t*) TLB_NEWAREA;
-//     TLB->pc = (unsigned int)tlbHandler;
-//     TLB->sp = RAM_TOP;
-//     TLB->cpsr = STATUS_DISABLE_INT(TLB->cpsr);
-//     TLB->cpsr = STATUS_DISABLE_TIMER(TLB->cpsr);
-//     TLB->cpsr = TLB->cpsr | STATUS_SYS_MODE; 
-//     TLB->CP15_Control = CP15_DISABLE_VM(TLB->CP15_Control);
+		state_t *TLB = (state_t*) TLB_NEWAREA;
+		TLB->pc = (unsigned int)tlbHandler;
+		TLB->sp = RAM_TOP;
+		TLB->cpsr = STATUS_DISABLE_INT(TLB->cpsr);
+		TLB->cpsr = STATUS_DISABLE_TIMER(TLB->cpsr);
+		TLB->cpsr = TLB->cpsr &  ~STATUS_SYS_MODE; 
+		TLB->CP15_Control = CP15_DISABLE_VM(TLB->CP15_Control);
 
-//     state_t *INTERRUPT = (state_t*) INT_NEWAREA;
-//     INTERRUPT->pc = (unsigned int)interruptHandler;
-//     INTERRUPT->sp = RAM_TOP;
-//     INTERRUPT->cpsr = STATUS_DISABLE_INT(INTERRUPT->cpsr);
-//     INTERRUPT->cpsr = STATUS_DISABLE_TIMER(INTERRUPT->cpsr);
-//     INTERRUPT->cpsr = INTERRUPT->cpsr | STATUS_SYS_MODE; 
-//     INTERRUPT->CP15_Control = CP15_DISABLE_VM(INTERRUPT->CP15_Control);
+		state_t *INTERRUPT = (state_t*) INT_NEWAREA;
+		INTERRUPT->pc = (unsigned int)interruptHandler;
+		INTERRUPT->sp = RAM_TOP;
+		INTERRUPT->cpsr = STATUS_DISABLE_INT(INTERRUPT->cpsr);
+		INTERRUPT->cpsr = STATUS_DISABLE_TIMER(INTERRUPT->cpsr);
+		INTERRUPT->cpsr = INTERRUPT->cpsr &  ~STATUS_SYS_MODE; 
+		INTERRUPT->CP15_Control = CP15_DISABLE_VM(INTERRUPT->CP15_Control);
 
-//   #endif
+  	#endif
+
 }
 
 //Inizializzo i Pcb
@@ -264,7 +269,7 @@ int Eccezione(int linea, int device){
 }
 
 void stampaInt(int n){
-	
+/*	
 	if(n < 0) termprint("ERRORE \n");
 	if(n == 0) termprint("ZERO \n");
 	if(n == 1) termprint("UNO \n");
@@ -276,26 +281,74 @@ void stampaInt(int n){
 	if(n == 7) termprint("SETTE \n");
 	if(n == 8) termprint("OTTO \n");
 	if(n > 8) termprint("ALTRO \n");
+*/
+}
+
+
+
+					//  			child1
+					// p7root     p7root->child
+//Funzione che controlla se pcbProgenie è figlio di padre (o se sta nella sua progenie)
+int isChild(pcb_t *curr, pcb_t *q){
+//ritorna true se il processo da terminare si trova all'interno della progenie del curr_proc
+
+	if(q->p_parent == curr){
+		isChild_TRUE();
+		return TRUE;
+	}
+	else if(q->p_parent == NULL){
+		isChild_FALSE();
+		return FALSE;
+	}
+	else{
+		isChild_ELSE();
+		return isChild(curr, q->p_parent);
+	} 
+
+	// int appoggio = 0;
+
+	// //caso base in cui il pcb ha padre null 
+	// if(pcbProgenie->p_parent == NULL){
+		
+	// 	return 0;
+	
+	// }
+
+	// if(padre == pcbProgenie->p_parent){
+
+	// 	//Ho trovato 
+	// 	return 1;
+
+	// }
+	
+	// //Quello che cerco non è uguale al padre quindi potrebbe essere figlio dei figli del padre
+	// else{
+
+	// 	return appoggio || isChild(padre, pcbProgenie->p_parent);
+
+	// }	
 
 }
 
-//Funzione che controlla se cercare è figlio di padre (o se sta nella sua progenie)
-int isChild(pcb_t *padre, pcb_t *cercare){
 
-	int appoggio = 0;
-
-	if(padre == cercare->p_parent){
-
-		//Ho trovato 
-		return 1;
-
-	}
-	
-	//Quello che cerco non è uguale al padre quindi potrebbe essere figlio dei figli del padre
-	else{
-
-		return appoggio || isChild(padre, cercare->p_parent);
-
-	}	
-
+void stampaCauseExc(int n){
+/*
+	if(n < 0) termprint("ERRORE \n");
+	if(n == 0) termprint("ZERO \n");
+	if(n == 1) termprint("UNO \n");
+	if(n == 2) termprint("DUE \n");
+	if(n == 3) termprint("TRE \n");
+	if(n == 4) termprint("QUATTRO \n");
+	if(n == 5) termprint("CINQUE \n");
+	if(n == 6) termprint("SEI \n");
+	if(n == 7) termprint("SETTE \n");
+	if(n == 8) termprint("OTTO \n");
+	if(n == 9) termprint("NOVE \n");
+	if(n == 10) termprint("DIECI \n");
+	if(n == 11) termprint("UNDICI \n");
+	if(n == 12) termprint("DODICI \n");
+	if(n == 13) termprint("TREDICI \n");
+	if(n == 14) termprint("QUATTORDICI \n");
+	if(n > 14) termprint("ALTRO \n");
+*/
 }

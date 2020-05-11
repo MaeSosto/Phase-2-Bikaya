@@ -38,8 +38,20 @@ void InterruptDisk(){
 				//Sblocco il processo sul terminale in ricezione del device richiesto
 				Verhogen(Semaforo.disk[i].s_key);
 
-				//Aggiorno lo status del processo svegliato
-				GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+				#ifdef TARGET_UMPS
+					
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+
+				#endif
+
+				#ifdef TARGET_UARM
+
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.a1 = reg->status;
+
+
+				#endif
 								
 			}
 			
@@ -73,8 +85,20 @@ void InterruptTape(){
 				//Sblocco il processo sul terminale in ricezione del device richiesto
 				Verhogen(Semaforo.tape[i].s_key);
 
-				//Aggiorno lo status del processo svegliato
-				GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+				#ifdef TARGET_UMPS
+					
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+
+				#endif
+
+				#ifdef TARGET_UARM
+
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.a1 = reg->status;
+
+
+				#endif
 								
 			}
 			
@@ -108,8 +132,20 @@ void InterruptNetwork(){
 				//Sblocco il processo sul terminale in ricezione del device richiesto
 				Verhogen(Semaforo.network[i].s_key);
 
-				//Aggiorno lo status del processo svegliato
-				GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+				#ifdef TARGET_UMPS
+					
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+
+				#endif
+
+				#ifdef TARGET_UARM
+
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.a1 = reg->status;
+
+
+				#endif
 								
 			}
 			
@@ -143,8 +179,20 @@ void InterruptPrinter(){
 				//Sblocco il processo sul terminale in ricezione del device richiesto
 				Verhogen(Semaforo.printer[i].s_key);
 
-				//Aggiorno lo status del processo svegliato
-				GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+				#ifdef TARGET_UMPS
+					
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.reg_v0 = reg->status;
+
+				#endif
+
+				#ifdef TARGET_UARM
+
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.a1 = reg->status;
+
+
+				#endif
 								
 			}
 			
@@ -185,8 +233,20 @@ void InterruptTerminal(){
 					//Sblocco il processo sul terminale in ricezione del device richiesto
 					Verhogen(Semaforo.terminalR[i].s_key);
 
+					#ifdef TARGET_UMPS
+					
 					//Aggiorno lo status del processo svegliato
 					GOODMORNING_PCB->p_s.reg_v0 = reg->recv_status;
+
+				#endif
+
+				#ifdef TARGET_UARM
+
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.a1 = reg->recv_status;
+
+
+				#endif
 									
 				}
 				
@@ -207,8 +267,20 @@ void InterruptTerminal(){
 					//Sblocco il processo sul terminale in ricezione del device richiesto
 					Verhogen(Semaforo.terminalT[i].s_key);
 
+					#ifdef TARGET_UMPS
+					
 					//Aggiorno lo status del processo svegliato
 					GOODMORNING_PCB->p_s.reg_v0 = reg->transm_status;
+
+				#endif
+
+				#ifdef TARGET_UARM
+
+					//Aggiorno lo status del processo svegliato
+					GOODMORNING_PCB->p_s.a1 = reg->transm_status;
+
+
+				#endif
 									
 				}
 				

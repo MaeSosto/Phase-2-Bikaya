@@ -9,6 +9,12 @@ void bp_sys_sot(){}
 
 void bp_getTodlo(){}
 
+void bp_hadler_TRAP_else(){}
+void bp_hadler_TLB_else(){}
+void bp_hadler_SYS8_else(){}
+void bp_hadler_SYS9_else(){}
+
+extern void stampaCauseExc(int n);
 #define INTERRUPT_PENDING_MASK     	0x0000ff00
 #define INTERRUPT_PENDING_B      	8
 #define INTERRUPT_PENDING_FUNC(x)   (((x) & INTERRUPT_PENDING_MASK) >> INTERRUPT_PENDING_B)
@@ -41,7 +47,8 @@ void interruptHandler(){
 
 
 	//Prendo l' old area dell'interrupt al processo
-	struct state *AREA=(state_t *) INT_OLDAREA;
+	state_t *AREA=(state_t *) INT_OLDAREA;
+
 	//SaveOldAreaToPCB(AREA, &(ACTIVE_PCB->p_s));
 
 	//*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
@@ -72,15 +79,26 @@ void interruptHandler(){
 		ACTIVE_PCB->kernel_start = getTODLO();
 	}
 
-	//Interrupt 1 - Inter-processor interrupts
-	if(CAUSE_IP_GET(cause, INT_T_SLICE)){
+	#ifdef TARGET_UMPS
+		//Interrupt 1 - Inter-processor interrupts
+		if(CAUSE_IP_GET(cause, INT_T_SLICE)){
+			
+			InterruptPLC();
+			//????
+		// 	 setTIMER(TIME_SLICE);
+		//   scheduler();
 		
-		InterruptPLC();
-		//????
-	// 	 setTIMER(TIME_SLICE);
-    //   scheduler();
-	
-	}
+		}
+
+	#endif
+
+	#ifdef TARGET_UARM
+
+		//Interrupt 1 - Inter-processor interrupts 
+		//Non c'è un uARM
+		if(0){}
+
+	#endif
 	
 	//Interrupt 2 Interval Timer
 	else if(CAUSE_IP_GET(cause, INT_TIMER)){
@@ -130,7 +148,7 @@ void interruptHandler(){
 	//NON SO
 	else{
 		
-		termprint("Interrupt: err\n");
+		//termprint("Interrupt: err\n");
 		PANIC();
 
 	}
@@ -143,10 +161,10 @@ void interruptHandler(){
 		
 		if(ACTIVE_PCB != NULL){
 			//Salvo i registri dell'old area dell'interrupt al processo
-			struct state *AREA=(state_t *) INT_OLDAREA;
+			state_t *AREA=(state_t *) INT_OLDAREA;
 
 			/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
-			SaveOldAreaToPCB(AREA, &(ACTIVE_PCB->p_s));
+			SavePCBToOldArea(AREA, &(ACTIVE_PCB->p_s));
 
 			
 			//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
@@ -203,9 +221,9 @@ void syscallHandler(){
 	
 	unsigned int ritorno; //Assegno il valore di ritorno
 
-	struct state *AREA = (state_t *) SYSBK_OLDAREA;
+	state_t *AREA = (state_t *) SYSBK_OLDAREA;
 	
-	SaveOldAreaToPCB((state_t *) SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
+	SavePCBToOldArea((state_t *) SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
 
 
 	//cpy_state((state_t*) SYSBK_OLDAREA, &curr_proc->p_s);
@@ -217,109 +235,124 @@ void syscallHandler(){
 		
 		//Accedo alla Old Area della system call
 		cause = (CAUSE_GET_EXCCODE(AREA->cause));
-	
+
+		unsigned int param0 = AREA->reg_a0;
+		unsigned int param1 = AREA->reg_a1;
+		unsigned int param2 = AREA->reg_a2;
+		unsigned int param3 = AREA->reg_a3;
+
 	#endif
 
 	#ifdef TARGET_UARM
     
     	//Accedo alla Old Area della system call
 		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
+
+		unsigned int param0 = AREA->a1;
+		unsigned int param1 = AREA->a2;
+		unsigned int param2 = AREA->a3;
+		unsigned int param3 = AREA->a4;
         
 	#endif
 
-    //SYSCALL
+    //SYSCALL - EXC_SYSCAL = 8
     if(cause == EXC_SYSCALL){
 
 		//termprint("SYS \n");
 
 		//SYSCALL 1
-		if(AREA->reg_a0 == GETCPUTIME){
+		if(param0 == GETCPUTIME){
 			
 			//termprint("SYS 1 \n");
-			getCPUTime(&AREA->reg_a1, &AREA->reg_a2, &AREA->reg_a3);
+			getCPUTime(&param1, &param2, &param3);
 
 		}
 
 		//SYSCALL 2
-		else if(AREA->reg_a0 == CREATEPROCESS){
+		else if(param0 == CREATEPROCESS){
 			
 			//termprint("SYS 2 \n");
-			ritorno =  CreateProcess((state_t*)AREA->reg_a1, (int)AREA->reg_a2, (void **)AREA->reg_a3);			
+			ritorno =  CreateProcess((state_t*)param1, (int)param2, (void **)param3);			
 			
 
 		}
 
 		//SYSCALL 3
-		else if(AREA->reg_a0 == TERMINATEPROCESS){
+		else if(param0 == TERMINATEPROCESS){
 			
-			termprint("SYS 3 \n");
-			ritorno = TerminateProcess((void *)AREA->reg_a1);
+			
+			//termprint("SYS 3 \n");
+			ritorno = TerminateProcess((void *)param1);
 
 		}
 
 		//SYSCALL 4
-		else if(AREA->reg_a0 == VERHOGEN){
+		else if(param0 == VERHOGEN){
 
 			//termprint("SYS 4 \n");
 			//insert = TRUE;
-			Verhogen((int*)AREA->reg_a1);
+			Verhogen((int*)param1);
 			
 		}
 
 		//SYSCALL 5
-		else if(AREA->reg_a0 == PASSEREN){
+		else if(param0 == PASSEREN){
 			
 			//termprint("SYS 5 \n");
 			//insert = TRUE;
-			Passeren((int*)AREA->reg_a1);
+			Passeren((int*)param1);
 
 		}
 
 		//SYSCALL 6
-		else if(AREA->reg_a0 == WAITIO){
+		else if(param0 == WAITIO){
 
 			GOODMORNING_PCB=ACTIVE_PCB;	
 			//termprint("SYS 6 \n");
-			ritorno = DO_IO((unsigned int)AREA->reg_a1, (unsigned int*)AREA->reg_a2, (int)AREA->reg_a3);	
+			ritorno = DO_IO((unsigned int)param1, (unsigned int*)param2, (int)param3);	
 			bp_handler_DOIO();
 		
 
 		}
 
 		//SYSCALL 7
-		else if(AREA->reg_a0 == SPECPASSUP){
+		else if(param0 == SPECPASSUP){
 			
-			ritorno = SpecPassup(AREA->reg_a1, (struct state*)AREA->reg_a2, (struct state*)AREA->reg_a3);
+			ritorno = SpecPassup(param1, (state_t *)param2, (state_t *)param3);
 			
 		}
 
 		//SYSCALL 8
-		else if(AREA->reg_a0 == GETPID){
+		else if(param0 == GETPID){
 			
-      		termprint("SYS 8 \n");
-			getPid((void **)AREA->reg_a1, (void **)AREA->reg_a2);
+      		//termprint("SYS 8 \n");
+			getPid((void **)param1, (void **)param2);
 		
 		}
-
+		
+		//se la syscall è maggiore di 8
 		else{
 
-			//Controllo se ho un gestore
+			bp_hadler_SYS8_else();
+			
+			SavePCBToOldArea((state_t*)SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
+			
 			if(ACTIVE_PCB->SysNew != NULL && ACTIVE_PCB->SysOld != NULL){
+				//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.
 
-				//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
-				SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->SysOld);
+				SavePCBToOldArea((state_t*)SYSBK_OLDAREA,  (ACTIVE_PCB->SysOld));
 				
-				//Carico lo stato nella new area
+				//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
 				LDST(ACTIVE_PCB->SysNew);
+			
 			}
-
-			//Non ho un gestore
 			else{
 
-				//Termino il processo
-				TerminateProcess(ACTIVE_PCB);
+				//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
+				TerminateProcess(0);
 
-				//Richiamo lo scheduler
+				ACTIVE_PCB = NULL;
+
 				Scheduling();
 				
 			}
@@ -328,36 +361,40 @@ void syscallHandler(){
 
     }
 
-	//Controllo che sia un Breakpoint (EXC_BP 9)
-	else if(CAUSE_GET_EXCCODE(AREA->cause) == EXC_BP){
+	//BREAKPOINT - 9
+	else if(cause == EXC_BP){
 
-		//Controllo se ho un gestore
+		SavePCBToOldArea((state_t*)SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
+		
 		if(ACTIVE_PCB->SysNew != NULL && ACTIVE_PCB->SysOld != NULL){
+			//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
 
-			//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
-			SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->SysOld);
-			SavePCBToOldArea(&(ACTIVE_PCB->p_s), (state_t*)SYSCALL_OLDAREA);
-			//Carico lo stato nella new area
+			SavePCBToOldArea((state_t*)SYSBK_OLDAREA,  (ACTIVE_PCB->SysOld));
+			
+			//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
 			LDST(ACTIVE_PCB->SysNew);
+		
 		}
-
-		//Non ho un gestore
 		else{
 
-			//Termino il processo
-			TerminateProcess(ACTIVE_PCB);
+			bp_hadler_SYS9_else();
 
-			//Richiamo lo scheduler
+			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
+			TerminateProcess(0);
+
+			ACTIVE_PCB = NULL;
+
 			Scheduling();
 			
 		}
+
 	}
 
 	//Ho un processo ancora attivo in cpu
 	if(ACTIVE_PCB != NULL){
 
 		//Salvo lo stato
-		SaveOldAreaToPCB(AREA, &(ACTIVE_PCB->p_s));
+		SavePCBToOldArea(AREA, &(ACTIVE_PCB->p_s));
 
 		#ifdef TARGET_UMPS
 		
@@ -367,7 +404,7 @@ void syscallHandler(){
 
 		#ifdef TARGET_UARM
 
-			ACTIVE_PCB->p_s.reg_a0 = ritorno;
+			ACTIVE_PCB->p_s.a1 = ritorno;
 		
 		#endif
 
@@ -397,54 +434,121 @@ void syscallHandler(){
 //Gestore delle trap
 void trapHandler(){
 
-    //Controllo se ho un gestore
-	if(ACTIVE_PCB->PTNew != NULL && ACTIVE_PCB->PTOld != NULL){
+	unsigned int cause;
 
-		//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
-		SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->PTOld);
+	state_t *AREA = (state_t *) PGMTRAP_OLDAREA;
+
+	int arithoverflow = 0;
+
+	#ifdef TARGET_UMPS
 		
-		SavePCBToOldArea(&(ACTIVE_PCB->p_s), (state_t*)TRAP_OLDAREA);
-
-
-		//Carico lo stato nella new area
-		LDST(ACTIVE_PCB->PTNew);
-	}
-
-	//Non ho un gestore
-	else{
-
-		//Termino il processo
-		TerminateProcess(ACTIVE_PCB);
-
-		//Richiamo lo scheduler
-		Scheduling();
+		//Aumentiamo di una word
+		//AREA->pc_epc = AREA->pc_epc + 4;
 		
+		//Accedo alla Old Area della system call
+		cause = (CAUSE_GET_EXCCODE(AREA->cause));
+
+		if(cause==EXC_ARITHOVERFLOW){
+
+			arithoverflow = 1;
+		
+		} 
+	
+	#endif
+
+	#ifdef TARGET_UARM
+    
+    	//Accedo alla Old Area della system call
+		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
+        
+	#endif
+
+	if(cause==EXC_ADDRINVLOAD || cause==EXC_ADDRINVSTORE || cause==EXC_BUSINVFETCH || cause==EXC_BUSINVLDSTORE || cause==EXC_RESERVEDINSTR || cause==EXC_COPROCUNUSABLE || arithoverflow){
+
+
+		SavePCBToOldArea((state_t*)PGMTRAP_OLDAREA, &(ACTIVE_PCB->p_s));
+		
+		if(ACTIVE_PCB->PTNew != NULL && ACTIVE_PCB->PTOld != NULL){
+			//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
+
+			SavePCBToOldArea((state_t*)PGMTRAP_OLDAREA,  (ACTIVE_PCB->PTOld));
+			
+			//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
+			LDST(ACTIVE_PCB->PTNew);
+		
+		}
+		else{
+			
+			bp_hadler_TRAP_else();
+
+			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
+			TerminateProcess(0);
+
+			ACTIVE_PCB = NULL;
+
+			Scheduling();
+			
+		}
+	}else{
+		PANIC();
 	}
 
 }
 
+
+
 //Gestore delle tlb
 void tlbHandler(){
 
-  	//Controllo se ho un gestore
-	if(ACTIVE_PCB->TLBNew != NULL && ACTIVE_PCB->TLBOld != NULL){
+unsigned int cause;
 
-		//Salvo lo stato del processo corrente nella old area della sys/bp dedicata
-		SavePCBToOldArea(&(ACTIVE_PCB->p_s), ACTIVE_PCB->TLBOld);
-		SavePCBToOldArea(&(ACTIVE_PCB->p_s), (state_t*)TLB_OLDAREA);
-		//Carico lo stato nella new area
-		LDST(ACTIVE_PCB->TLBNew);
-	}
+	state_t *AREA = (state_t *) TLB_OLDAREA;
 
-	//Non ho un gestore
-	else{
-
-		//Termino il processo
-		TerminateProcess(ACTIVE_PCB);
-
-		//Richiamo lo scheduler
-		Scheduling();
+	#ifdef TARGET_UMPS
 		
+		//Aumentiamo di una word
+		//AREA->pc_epc = AREA->pc_epc + 4;
+		
+		//Accedo alla Old Area della system call
+		cause = (CAUSE_GET_EXCCODE(AREA->cause));
+	
+	#endif
+
+	#ifdef TARGET_UARM
+    
+    	//Accedo alla Old Area della system call
+		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
+        
+	#endif
+	
+	//stampaCauseExc(cause);
+
+	if(cause==EXC_TLBMOD || cause==EXC_TLBINVLOAD || cause==EXC_TLBINVSTORE || cause==EXC_BADPTE || cause==EXC_PTEMISS){
+
+
+		SavePCBToOldArea((state_t*)TLB_OLDAREA, &(ACTIVE_PCB->p_s));
+		
+		if(ACTIVE_PCB->TLBNew != NULL && ACTIVE_PCB->TLBOld != NULL){
+			//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
+
+			SavePCBToOldArea((state_t*)TLB_OLDAREA,  (ACTIVE_PCB->TLBOld));
+			
+			//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
+			LDST(ACTIVE_PCB->TLBNew);
+		
+		}
+		else{
+
+			bp_hadler_TLB_else();
+
+			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
+			TerminateProcess(0);
+
+			ACTIVE_PCB = NULL;
+
+			Scheduling();
+			
+		}
 	}
 
 }

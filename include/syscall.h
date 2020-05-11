@@ -56,7 +56,7 @@
     int DO_IO(unsigned int command, unsigned int *registro, int subdevice);
     
     //SYSCALL 7
-    int SpecPassup(int type, struct state *old, struct state *nuovo);
+    int SpecPassup(int type, state_t *old, state_t *nuovo);
 
     //SYSCALL 8
     void getPid(void ** pid, void ** ppid);

@@ -20,8 +20,10 @@
  *      Modified by Mattia Maldini, Renzo Davoli 2020
  */
 
-void bp_tempo(){}
-void bp_test_prof(){}
+void bp_TEST(){}
+void bp_BELLAAAAAAAAAAA(){}
+
+extern void stampaCauseExc(int n);
 
 #ifdef TARGET_UMPS
 #include "umps/libumps.h"
@@ -257,7 +259,6 @@ void test() {
     SYSCALL(CREATEPROCESS, (int)&p5state, DEFAULT_PRIORITY, 0); /* start p5		*/
 
     SYSCALL(CREATEPROCESS, (int)&p6state, DEFAULT_PRIORITY, 0); /* start p6		*/
-
     SYSCALL(VERHOGEN, (int)&blkp7, 0, 0);
 
     /* now for a more rigorous check of process termination */
@@ -265,7 +266,6 @@ void test() {
         SYSCALL(PASSEREN, (int)&blkp7, 0, 0);
         blkp7child = 0;
         blkleaves  = 0;
-
         creation = SYSCALL(CREATEPROCESS, (int)&p7rootstate, DEFAULT_PRIORITY, (int)&p7pid);
 
         if (creation == ERROR) {
@@ -274,14 +274,17 @@ void test() {
         }
 
         SYSCALL(PASSEREN, (int)&endp7, 0, 0);
+bp_BELLAAAAAAAAAAA();
         SYSCALL(TERMINATEPROCESS, (int)p7pid, 0, 0);
-
+bp_BELLAAAAAAAAAAA();
         SYSCALL(VERHOGEN, (int)&blkp7, 0, 0);
         SYSCALL(VERHOGEN, (int)&blkp7child, 0, 0);
         SYSCALL(VERHOGEN, (int)&blkp7child, 0, 0);
     }
 
     print("\n");
+
+bp_TEST();
 
     print("p1 finishes OK -- TTFN\n");
     *((memaddr *)BADADDR) = 0; /* terminate p1 */
@@ -437,8 +440,6 @@ void p4prog() {
             print("pgmTrapHandler - other program trap\n");
     }
 
-bp_test_prof();
-
     LDST(&pstat_o); /* "return" to old area (that changed meanwhile) */
 }
 
@@ -487,6 +488,11 @@ void p4() {
     /* this because they must restart using some BIOS area */
 
     /* specify trap vectors */
+
+
+
+    //stampaCauseExc(CAUSE_CODE(pstat_o));
+    
     SYSCALL(SPECPASSUP, 2, (int)&pstat_o, (int)&pstat_n);
 
     SYSCALL(SPECPASSUP, 1, (int)&mstat_o, (int)&mstat_n);
@@ -543,8 +549,7 @@ void p4b() {
 void p5() {
     print("p5 starts (and hopefully dies)\n");
 
-    SYSCALL(13, 0, 0, 0); /* should cause termination because p5 has no
-                                                                                                   trap vector */
+    SYSCALL(13, 0, 0, 0); /* should cause termination because p5 has no trap vector */
 
     print("error: p5 alive after SYS13() with no trap vector\n");
 

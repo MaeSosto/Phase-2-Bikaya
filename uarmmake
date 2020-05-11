@@ -54,10 +54,13 @@ kernel.o : kernel.c
 pcb.o : pcb.c include/pcb.h
 	$(CC) -c $(CFLAGS) $<
 
+asl.o : asl.c include/asl.h
+	$(CC) -c $(CFLAGS) $<
+
 p2test_bikaya_v0.1.o : p2test_bikaya_v0.1.c
 	$(CC) -c $(CFLAGS) $<
 
-kernel : pcb.o utils.o scheduler.o syscall.o interrupt.o kernel.o handler.o p2test_bikaya_v0.1.o
+kernel : pcb.o asl.o utils.o scheduler.o syscall.o interrupt.o kernel.o handler.o p2test_bikaya_v0.1.o
 	$(LD) -o $@ $^ $(CRTSO_PATH) $(LIBUARM_PATH) $(LIBDIV_PATH) $(LDFLAGS)
 
 clean:
