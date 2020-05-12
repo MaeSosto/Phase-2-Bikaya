@@ -31,16 +31,19 @@ void interruptHandler(){
 	//Se il processo non è NULL gestisco il tempo
 	if(ACTIVE_PCB != NULL){
 		
-		if(ACTIVE_PCB->user_start > 0){
+		#ifdef TARGET_UMPS
+			if(ACTIVE_PCB->user_start > 0){
 
-			//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
-			ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
+				//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
+				ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
 
-			//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
-			ACTIVE_PCB->user_start = 0;
-			
-		}
+				//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
+				ACTIVE_PCB->user_start = 0;
+				
+			}
 		
+		#endif
+
 		//inizio a contare il tempo in kernel mode
 		//ACTIVE_PCB->kernel_start = getTODLO();
 	}
@@ -75,8 +78,13 @@ void interruptHandler(){
 	
 	//Linee interrupt da confrontare per trovare l'interrupt giusto fra gli 8 possibili
 	if(ACTIVE_PCB != NULL){
-		//inizio a contare il tempo in kernel mode
-		ACTIVE_PCB->kernel_start = getTODLO();
+
+		#ifdef TARGET_UMPS
+
+			//inizio a contare il tempo in kernel mode
+			ACTIVE_PCB->kernel_start = getTODLO();
+
+		#endif
 	}
 
 	#ifdef TARGET_UMPS
@@ -170,8 +178,12 @@ void interruptHandler(){
 			//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
 			//ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
 			
-			//Faccio partire l'user mode perchè finisco un interrupt
-			ACTIVE_PCB->user_start = getTODLO(); 
+			#ifdef TARGET_UMPS
+			
+				//Faccio partire l'user mode perchè finisco un interrupt
+				ACTIVE_PCB->user_start = getTODLO(); 
+
+			#endif 
 		
 		}
 
@@ -185,10 +197,14 @@ void interruptHandler(){
 	//Controllo se ho processi attivi
 	else if(ACTIVE_PCB != NULL){
 		
-		// //Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-		 //ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+		#ifdef TARGET_UMPS
 
-		ACTIVE_PCB->user_start = getTODLO(); 
+			// //Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
+			 //ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+
+			ACTIVE_PCB->user_start = getTODLO(); 
+
+		#endif 
 
 
 		Scheduling();
@@ -205,15 +221,19 @@ void syscallHandler(){
 	//Se il processo non è NULL gestisco il tempo
 	if(ACTIVE_PCB != NULL){
 		
-		//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
-		bp_getTodlo();
-		ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
+		#ifdef TARGET_UMPS
+			
+			if(ACTIVE_PCB->user_start > 0){
 
-		//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
-		ACTIVE_PCB->user_start = 0;
+				//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
+				ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
+
+				//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
+				ACTIVE_PCB->user_start = 0;
+				
+			}
 		
-		//inizio a contare il tempo in kernel mode
-		ACTIVE_PCB->kernel_start = getTODLO();
+		#endif
 
 	}
 
@@ -399,7 +419,16 @@ void syscallHandler(){
 		#ifdef TARGET_UMPS
 		
 			ACTIVE_PCB->p_s.reg_v0 = ritorno;
-		
+
+			//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
+			ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
+
+			//Setto
+			ACTIVE_PCB->kernel_start = 0;
+
+			//Faccio partire l'user mode perchè finisco un interrupt
+			ACTIVE_PCB->user_start = getTODLO();
+
 		#endif
 
 		#ifdef TARGET_UARM
@@ -407,15 +436,6 @@ void syscallHandler(){
 			ACTIVE_PCB->p_s.a1 = ritorno;
 		
 		#endif
-
-		//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
-		ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
-		
-		//Setto
-		ACTIVE_PCB->kernel_start = 0;
-
-		//Faccio partire l'user mode perchè finisco un interrupt
-		ACTIVE_PCB->user_start = getTODLO();
 
 		LDST(&ACTIVE_PCB->p_s);
 

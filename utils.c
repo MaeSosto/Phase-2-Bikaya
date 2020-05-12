@@ -63,7 +63,7 @@ void setAreas(){
 		SYSCALL->sp = RAM_TOP;  //setto ramtop
 		SYSCALL->cpsr = STATUS_DISABLE_INT(SYSCALL->cpsr); //Disabilito gli interrupt
 		SYSCALL->cpsr = STATUS_DISABLE_TIMER(SYSCALL->cpsr);
-		SYSCALL->cpsr = SYSCALL->cpsr &  ~STATUS_SYS_MODE;  //Disabilito user mode = abilito kernel mode
+		SYSCALL->cpsr = SYSCALL->cpsr | STATUS_SYS_MODE;  //Disabilito user mode = abilito kernel mode
 		SYSCALL->CP15_Control = CP15_DISABLE_VM(SYSCALL->CP15_Control); //disabilito virtual memory
 
 		state_t *TRAP = (state_t*) PGMTRAP_NEWAREA;
@@ -71,7 +71,7 @@ void setAreas(){
 		TRAP->sp = RAM_TOP;
 		TRAP->cpsr = STATUS_DISABLE_INT(TRAP->cpsr);
 		TRAP->cpsr = STATUS_DISABLE_TIMER(TRAP->cpsr);
-		TRAP->cpsr = TRAP->cpsr &  ~STATUS_SYS_MODE; 
+		TRAP->cpsr = TRAP->cpsr | STATUS_SYS_MODE; 
 		TRAP->CP15_Control = CP15_DISABLE_VM(TRAP->CP15_Control);
 
 		state_t *TLB = (state_t*) TLB_NEWAREA;
@@ -79,7 +79,7 @@ void setAreas(){
 		TLB->sp = RAM_TOP;
 		TLB->cpsr = STATUS_DISABLE_INT(TLB->cpsr);
 		TLB->cpsr = STATUS_DISABLE_TIMER(TLB->cpsr);
-		TLB->cpsr = TLB->cpsr &  ~STATUS_SYS_MODE; 
+		TLB->cpsr = TLB->cpsr | STATUS_SYS_MODE; 
 		TLB->CP15_Control = CP15_DISABLE_VM(TLB->CP15_Control);
 
 		state_t *INTERRUPT = (state_t*) INT_NEWAREA;
@@ -87,7 +87,7 @@ void setAreas(){
 		INTERRUPT->sp = RAM_TOP;
 		INTERRUPT->cpsr = STATUS_DISABLE_INT(INTERRUPT->cpsr);
 		INTERRUPT->cpsr = STATUS_DISABLE_TIMER(INTERRUPT->cpsr);
-		INTERRUPT->cpsr = INTERRUPT->cpsr &  ~STATUS_SYS_MODE; 
+		INTERRUPT->cpsr = INTERRUPT->cpsr | STATUS_SYS_MODE; 
 		INTERRUPT->CP15_Control = CP15_DISABLE_VM(INTERRUPT->CP15_Control);
 
   	#endif
@@ -121,7 +121,7 @@ struct pcb_t *initAllPCB(unsigned int functionAddress, int priority){
 	#ifdef TARGET_UARM
 		tempPcb->p_s.cpsr = STATUS_DISABLE_INT(tempPcb->p_s.cpsr); //Enable interrupt (IL PROF DICE DI FAR DISABLE)
 		tempPcb->p_s.cpsr = STATUS_ENABLE_TIMER(tempPcb->p_s.cpsr); //Enable timer
-		tempPcb->p_s.cpsr = tempPcb->p_s.cpsr | STATUS_SYS_MODE; 
+		tempPcb->p_s.cpsr = tempPcb->p_s.cpsr | STATUS_SYS_MODE; //Kernel mode on
 		tempPcb->p_s.CP15_Control = CP15_DISABLE_VM(tempPcb->p_s.CP15_Control); //Disable VM
 		tempPcb->p_s.sp = RAM_TOP - FRAMESIZE * n;
 		tempPcb->p_s.pc = functionAddress;
@@ -289,44 +289,32 @@ void stampaInt(int n){
 					//  			child1
 					// p7root     p7root->child
 //Funzione che controlla se pcbProgenie è figlio di padre (o se sta nella sua progenie)
-int isChild(pcb_t *curr, pcb_t *q){
+int isChild(pcb_t *padre, pcb_t *pcbProgenie){
 //ritorna true se il processo da terminare si trova all'interno della progenie del curr_proc
 
-	if(q->p_parent == curr){
-		isChild_TRUE();
-		return TRUE;
-	}
-	else if(q->p_parent == NULL){
-		isChild_FALSE();
-		return FALSE;
-	}
-	else{
-		isChild_ELSE();
-		return isChild(curr, q->p_parent);
-	} 
+	int appoggio = 0;
 
-	// int appoggio = 0;
-
-	// //caso base in cui il pcb ha padre null 
-	// if(pcbProgenie->p_parent == NULL){
+	//caso base: in cui il pcb ha padre null 
+	if(pcbProgenie->p_parent == NULL){
 		
-	// 	return 0;
+		return 0;
 	
-	// }
+	}
 
-	// if(padre == pcbProgenie->p_parent){
+	//caso base: ho trovato il padre
+	if(padre == pcbProgenie->p_parent){
 
-	// 	//Ho trovato 
-	// 	return 1;
+		//Ho trovato 
+		return 1;
 
-	// }
+	}
 	
-	// //Quello che cerco non è uguale al padre quindi potrebbe essere figlio dei figli del padre
-	// else{
+	//Quello che cerco non è uguale al padre quindi potrebbe essere figlio dei figli del padre
+	else{
 
-	// 	return appoggio || isChild(padre, pcbProgenie->p_parent);
+		return appoggio || isChild(padre, pcbProgenie->p_parent);
 
-	// }	
+	}	
 
 }
 

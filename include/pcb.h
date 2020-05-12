@@ -29,5 +29,6 @@
 
 	//vaffanculo
 	struct pcb_t *removeChildNonOrfano(struct pcb_t *p);
-
+	struct pcb_t *returnFirstChild(struct pcb_t *p);
+	
 #endif

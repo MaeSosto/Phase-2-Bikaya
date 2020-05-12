@@ -14,37 +14,41 @@ void bp_type_TRAP(){}
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){
     
-    // Incremento il tempo totale del kernel
-    // ACTIVE_PCB->kernel_total += getTODLO()-ACTIVE_PCB->kernel_total;
+    #ifdef TARGET_UMPS
+        
+        // Incremento il tempo totale del kernel
+        // ACTIVE_PCB->kernel_total += getTODLO()-ACTIVE_PCB->kernel_total;
 
-    
-    //Incremento il tempo totale del kernel
-    ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + (getTODLO()-ACTIVE_PCB->kernel_start);
-    
-    //Incremento il tempo totale dello user
-    //ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
-    
         
-    //Se ho un tempo user lo assegno 
-    if(user != NULL){
+        //Incremento il tempo totale del kernel
+        ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + (getTODLO()-ACTIVE_PCB->kernel_start);
+        
+        //Incremento il tempo totale dello user
+        //ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
+        
+            
+        //Se ho un tempo user lo assegno 
+        if(user != NULL){
 
-        *(user) = ACTIVE_PCB->user_total;
-           
-    }
-    
-    //Se ho un tempo kernel lo assegno 
-    if(kernel != NULL){
+            *(user) = ACTIVE_PCB->user_total;
+            
+        }
         
-        *(kernel) = ACTIVE_PCB->kernel_total;
-    
-    }
+        //Se ho un tempo kernel lo assegno 
+        if(kernel != NULL){
+            
+            *(kernel) = ACTIVE_PCB->kernel_total;
         
-    //Se ho un tempo totale lo assegno 
-    if(wallclock != NULL){
-    
-        *(wallclock) = getTODLO() - ACTIVE_PCB->wallclock_start;
-    
-    }
+        }
+            
+        //Se ho un tempo totale lo assegno 
+        if(wallclock != NULL){
+        
+            *(wallclock) = getTODLO() - ACTIVE_PCB->wallclock_start;
+        
+        }
+
+    #endif
     
 }
 
@@ -138,29 +142,41 @@ int TerminateProcess(void * pid){
         }
 
         //Rimuove il PCB puntato da p dalla lista dei figli del padre
-        outChild(tempPcb);
+        //outChild(tempPcb);
         
     }
 
     pcb_t *figlio;
 
+    //caso ricorsivo: tempPCB ha dei figli - chiamo la TerminateProcess sui figli
     //Controllo se il processo da eliminare ha figli
     if( !emptyChild(tempPcb) ){
 
-        do{
+        //Elimino la progenie del tempPcb
+        //figlio = removeChildNonOrfano(tempPcb);
+        figlio = returnFirstChild(tempPcb);
 
-            //Elimino la progenie del tempPcb
-            figlio = removeChildNonOrfano(tempPcb);
-            
+        while(figlio != NULL){
+            //Rimuove il PCB puntato da p dalla lista dei figli del padre
             TerminateProcess(figlio);
-            
 
+            figlio = returnFirstChild(tempPcb);
+        }
+    
+    }
+    
+    //caso base: tempPCB è una foglia (non ha figli da eliminare - non deve andare in ricorsione)
+    else {
 
-        }while(figlio != NULL);
+        //settare il padre del tempPCB = NULL
+        //togliere il tempPCB dalla lista dei padre->p_figli
+        outChild(tempPcb);
 
     }
 
     
+
+
     //Controllo se il processo da eliminare è bloccato su un semaforo
     if(tempPcb->p_semkey != NULL){
 
@@ -190,6 +206,8 @@ int TerminateProcess(void * pid){
         ACTIVE_PCB = NULL;
     
     }
+
+tempPcb->p_parent = NULL;
 
     freePcb(tempPcb);
 
@@ -241,14 +259,17 @@ void Passeren(int *semaddr){
         //Copio lo stato della old area della sys nel processo che lo ha sollevato 
         SavePCBToOldArea(oldarea, &(ACTIVE_PCB->p_s));
         
-        //Salvo il valore del tempo in kernelmode
+        #ifdef TARGET_UMPS
+        
+            //Salvo il valore del tempo in kernelmode
+            if(ACTIVE_PCB->kernel_start > 0){
 
-        if(ACTIVE_PCB->kernel_start > 0){
-            
-            ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
-            ACTIVE_PCB->kernel_start = 0;
+                ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+                ACTIVE_PCB->kernel_start = 0;
 
-        }
+            }
+        
+        #endif 
         
         //Metto il processo nella coda del semaforo
 	 	int ret = insertBlocked(semaddr, ACTIVE_PCB);

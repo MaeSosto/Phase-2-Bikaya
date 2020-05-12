@@ -34,14 +34,18 @@ void ContextSwitch(){
 		//Faccio l'aging
 		Aging();
 
-		//fermo tempo in kernel mode del proc che mettiamo nella ready queue??
-		//Faccio 
-		if(ACTIVE_PCB->kernel_start>0){
+		#ifdef TARGET_UMPS
+			
+			//fermo tempo in kernel mode del proc che mettiamo nella ready queue??
+			//Faccio 
+			if(ACTIVE_PCB->kernel_start>0){
 
-			ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
-			ACTIVE_PCB->kernel_start=0;
+				ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
+				ACTIVE_PCB->kernel_start=0;
 
-		}
+			}
+		
+		#endif
 		
 		//Metto il processo nella Ready Queue
   		insertProcQ(ready_queue, ACTIVE_PCB);
@@ -63,18 +67,22 @@ void ContextSwitch(){
     //Setto il timer del processo
     *(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
 	
-	//Se non ho mai settato il tempo iniziale 
-	if(!ACTIVE_PCB->wallclock_start){
-	
-		//Assegno il tempo assoluto di inizio del processo
-		ACTIVE_PCB->wallclock_start = getTODLO();
-	
-	}
-	
+	#ifdef TARGET_UMPS
 
-	//Inizio a contare il tempo in user mode
-	ACTIVE_PCB->user_start = getTODLO();
+		//Se non ho mai settato il tempo iniziale 
+		if(!ACTIVE_PCB->wallclock_start){
+		
+			//Assegno il tempo assoluto di inizio del processo
+			ACTIVE_PCB->wallclock_start = getTODLO();
+
+		}
+
+
+		//Inizio a contare il tempo in user mode
+		ACTIVE_PCB->user_start = getTODLO();
 	
+	#endif 
+
 	//Carico il processo nel processore
    	LDST(&ACTIVE_PCB->p_s);   
 
@@ -137,8 +145,9 @@ void Scheduling(){
 				
 				#ifdef TARGET_UARM
 
-					//tprint("VEDI UN PO CHE FARE QUA \n");
-					//per uarm non setto lo status per now
+					//Abilito tutti gli interrupt e vado in kernel mode
+					setSTATUS(getSTATUS() | STATUS_SYS_MODE);
+					setSTATUS(STATUS_ALL_INT_ENABLE(getSTATUS()));
 
 				#endif
 				

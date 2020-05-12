@@ -206,7 +206,10 @@ struct pcb_t *outChild(struct pcb_t *p){
 	return p; //Restituisco l'elemento rimosso
 }
 
-//NOSTRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
+/********************************/
+/*  Funzioni nostre per fase 2  */
+/********************************/
+
 /* 14 - Rimuove il primo figlio del PCB puntato da p. Se p non ha figli, restituisce NULL. */
 struct pcb_t *removeChildNonOrfano(struct pcb_t *p){
 	if(emptyChild(p)) return NULL;	//Se non ha figli -> NULL
@@ -217,3 +220,14 @@ struct pcb_t *removeChildNonOrfano(struct pcb_t *p){
 	//primofiglio->p_parent = NULL; //Aggiorna a NULL il campo p_parent di primofiglio
 	return primofiglio; //Restituisce il puntatore al primo figlio di p.
 }
+
+/* 15 - Restituisce il primo figlio */
+struct pcb_t *returnFirstChild(struct pcb_t *p){
+	//p non ha figli -> NULL
+	if(emptyChild(p)) return NULL;
+
+	//p ha figli: restituisco il primo
+	struct pcb_t *primofiglio = container_of(list_next(&p->p_child),struct pcb_t, p_sib); //pcb del primo figlio
+	return primofiglio; //Restituisce il puntatore al primo figlio di p.
+};
+
