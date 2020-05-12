@@ -114,8 +114,6 @@ int TerminateProcess(void * pid){
     //Il processo da eliminare è quello corrente 
     if(pid == NULL || pid == 0){
 
-        
-
         //Dico che il processo da eliminare è il corrente
         tempPcb = ACTIVE_PCB;
 
@@ -140,9 +138,6 @@ int TerminateProcess(void * pid){
             return -1;
 
         }
-
-        //Rimuove il PCB puntato da p dalla lista dei figli del padre
-        //outChild(tempPcb);
         
     }
 

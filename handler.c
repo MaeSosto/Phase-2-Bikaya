@@ -1,6 +1,8 @@
 
 #include "include/handler.h"
 
+void bp_entering_hadler_TLB(){}
+
 void bp_handler_DOIO(){}
 
 void bp_hadler_term(){}
@@ -480,7 +482,7 @@ void trapHandler(){
     
     	//Accedo alla Old Area della system call
 		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
-        
+		
 	#endif
 
 	if(cause==EXC_ADDRINVLOAD || cause==EXC_ADDRINVSTORE || cause==EXC_BUSINVFETCH || cause==EXC_BUSINVLDSTORE || cause==EXC_RESERVEDINSTR || cause==EXC_COPROCUNUSABLE || arithoverflow){
@@ -498,8 +500,6 @@ void trapHandler(){
 		
 		}
 		else{
-			
-			bp_hadler_TRAP_else();
 
 			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
 			TerminateProcess(0);
@@ -509,18 +509,21 @@ void trapHandler(){
 			Scheduling();
 			
 		}
+
 	}else{
+
 		PANIC();
+
 	}
 
 }
 
 
 
-//Gestore delle tlb
+//TLB HADLER
 void tlbHandler(){
 
-unsigned int cause;
+	unsigned int cause;
 
 	state_t *AREA = (state_t *) TLB_OLDAREA;
 
@@ -538,10 +541,14 @@ unsigned int cause;
     
     	//Accedo alla Old Area della system call
 		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
-        
+
+		stampaCauseExc(cause);
+
 	#endif
 	
 	//stampaCauseExc(cause);
+
+	bp_entering_hadler_TLB();
 
 	if(cause==EXC_TLBMOD || cause==EXC_TLBINVLOAD || cause==EXC_TLBINVSTORE || cause==EXC_BADPTE || cause==EXC_PTEMISS){
 

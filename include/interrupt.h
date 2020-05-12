@@ -10,7 +10,9 @@
         #include <umps/types.h>
         #include <umps/arch.h>
         #define INT_OLDAREA 0x20000000
-    
+
+        #define PENDING_BITMAP_START 0x1000003c
+
     #endif
 
     #ifdef TARGET_UARM
@@ -19,10 +21,12 @@
         #include <uarm/uARMconst.h>
         #include <uarm/arch.h>
 
+        #define PENDING_BITMAP_START 0x00006FE0
+
     #endif
 
     /* Interrupting devices bitmaps starting address: the actual bitmap address is computed with INT_INTBITMAP_START + (WORD_SIZE * (int_no - 3)) */
-    #define PENDING_BITMAP_START 0x1000003c
+    
     /* Physical memory frame size */
     #define WORD_SIZE 4
     /* funzione per ottenere il bitmap corrente della linea di interrupt */
@@ -32,7 +36,7 @@
     extern struct pcb_t *ACTIVE_PCB;
     extern struct pcb_t *GOODMORNING_PCB;
     #define TIME_SLICE 3000
-    #define TERMSTATMASK 0xFF
+    #define TERMSTATMASK 0xFF   //in binario è 11111111
     #define CMD_ACK          1
     
     void InterruptPLC();

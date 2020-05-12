@@ -20,9 +20,6 @@
  *      Modified by Mattia Maldini, Renzo Davoli 2020
  */
 
-void bp_TEST(){}
-void bp_BELLAAAAAAAAAAA(){}
-
 extern void stampaCauseExc(int n);
 
 #ifdef TARGET_UMPS
@@ -274,9 +271,9 @@ void test() {
         }
 
         SYSCALL(PASSEREN, (int)&endp7, 0, 0);
-bp_BELLAAAAAAAAAAA();
+
         SYSCALL(TERMINATEPROCESS, (int)p7pid, 0, 0);
-bp_BELLAAAAAAAAAAA();
+
         SYSCALL(VERHOGEN, (int)&blkp7, 0, 0);
         SYSCALL(VERHOGEN, (int)&blkp7child, 0, 0);
         SYSCALL(VERHOGEN, (int)&blkp7child, 0, 0);
@@ -284,7 +281,6 @@ bp_BELLAAAAAAAAAAA();
 
     print("\n");
 
-bp_TEST();
 
     print("p1 finishes OK -- TTFN\n");
     *((memaddr *)BADADDR) = 0; /* terminate p1 */

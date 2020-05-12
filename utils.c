@@ -58,37 +58,38 @@ void setAreas(){
   
 	#ifdef TARGET_UARM
 
-		state_t *SYSCALL = (state_t*) SYSBK_NEWAREA;
-		SYSCALL->pc = (unsigned int)syscallHandler;  //assegno la funzione che gestisce la syscall
-		SYSCALL->sp = RAM_TOP;  //setto ramtop
-		SYSCALL->cpsr = STATUS_DISABLE_INT(SYSCALL->cpsr); //Disabilito gli interrupt
-		SYSCALL->cpsr = STATUS_DISABLE_TIMER(SYSCALL->cpsr);
-		SYSCALL->cpsr = SYSCALL->cpsr | STATUS_SYS_MODE;  //Disabilito user mode = abilito kernel mode
-		SYSCALL->CP15_Control = CP15_DISABLE_VM(SYSCALL->CP15_Control); //disabilito virtual memory
+			 state_t *SYSCALL = (state_t*) SYSBK_NEWAREA;
+    SYSCALL->pc = (unsigned int)syscallHandler;  //assegno la funzione che gestisce la syscall
+    SYSCALL->sp = RAM_TOP;  //setto ramtop
+    SYSCALL->cpsr = STATUS_DISABLE_INT(SYSCALL->cpsr); //Disabilito gli interrupt
+    SYSCALL->cpsr = STATUS_DISABLE_TIMER(SYSCALL->cpsr);
+    SYSCALL->cpsr = SYSCALL->cpsr | STATUS_SYS_MODE; 
+    SYSCALL->CP15_Control = CP15_DISABLE_VM(SYSCALL->CP15_Control); //disabilito virtual memory
 
-		state_t *TRAP = (state_t*) PGMTRAP_NEWAREA;
-		TRAP->pc = (unsigned int)trapHandler;
-		TRAP->sp = RAM_TOP;
-		TRAP->cpsr = STATUS_DISABLE_INT(TRAP->cpsr);
-		TRAP->cpsr = STATUS_DISABLE_TIMER(TRAP->cpsr);
-		TRAP->cpsr = TRAP->cpsr | STATUS_SYS_MODE; 
-		TRAP->CP15_Control = CP15_DISABLE_VM(TRAP->CP15_Control);
+    state_t *TRAP = (state_t*) PGMTRAP_NEWAREA;
+    TRAP->pc = (unsigned int)trapHandler;
+    TRAP->sp = RAM_TOP;
+    TRAP->cpsr = STATUS_DISABLE_INT(TRAP->cpsr);
+    TRAP->cpsr = STATUS_DISABLE_TIMER(TRAP->cpsr);
+    TRAP->cpsr = TRAP->cpsr | STATUS_SYS_MODE; 
+    TRAP->CP15_Control = CP15_DISABLE_VM(TRAP->CP15_Control);
 
-		state_t *TLB = (state_t*) TLB_NEWAREA;
-		TLB->pc = (unsigned int)tlbHandler;
-		TLB->sp = RAM_TOP;
-		TLB->cpsr = STATUS_DISABLE_INT(TLB->cpsr);
-		TLB->cpsr = STATUS_DISABLE_TIMER(TLB->cpsr);
-		TLB->cpsr = TLB->cpsr | STATUS_SYS_MODE; 
-		TLB->CP15_Control = CP15_DISABLE_VM(TLB->CP15_Control);
+    state_t *TLB = (state_t*) TLB_NEWAREA;
+    TLB->pc = (unsigned int)tlbHandler;
+    TLB->sp = RAM_TOP;
+    TLB->cpsr = STATUS_DISABLE_INT(TLB->cpsr);
+    TLB->cpsr = STATUS_DISABLE_TIMER(TLB->cpsr);
+    TLB->cpsr = TLB->cpsr | STATUS_SYS_MODE; 
+    TLB->CP15_Control = CP15_DISABLE_VM(TLB->CP15_Control);
 
-		state_t *INTERRUPT = (state_t*) INT_NEWAREA;
-		INTERRUPT->pc = (unsigned int)interruptHandler;
-		INTERRUPT->sp = RAM_TOP;
-		INTERRUPT->cpsr = STATUS_DISABLE_INT(INTERRUPT->cpsr);
-		INTERRUPT->cpsr = STATUS_DISABLE_TIMER(INTERRUPT->cpsr);
-		INTERRUPT->cpsr = INTERRUPT->cpsr | STATUS_SYS_MODE; 
-		INTERRUPT->CP15_Control = CP15_DISABLE_VM(INTERRUPT->CP15_Control);
+    state_t *INTERRUPT = (state_t*) INT_NEWAREA;
+    INTERRUPT->pc = (unsigned int)interruptHandler;
+    INTERRUPT->sp = RAM_TOP;
+    INTERRUPT->cpsr = STATUS_DISABLE_INT(INTERRUPT->cpsr);
+    INTERRUPT->cpsr = STATUS_DISABLE_TIMER(INTERRUPT->cpsr);
+    INTERRUPT->cpsr = INTERRUPT->cpsr | STATUS_SYS_MODE; 
+    INTERRUPT->CP15_Control = CP15_DISABLE_VM(INTERRUPT->CP15_Control);
+
 
   	#endif
 
@@ -121,11 +122,12 @@ struct pcb_t *initAllPCB(unsigned int functionAddress, int priority){
 	#ifdef TARGET_UARM
 		tempPcb->p_s.cpsr = STATUS_DISABLE_INT(tempPcb->p_s.cpsr); //Enable interrupt (IL PROF DICE DI FAR DISABLE)
 		tempPcb->p_s.cpsr = STATUS_ENABLE_TIMER(tempPcb->p_s.cpsr); //Enable timer
-		tempPcb->p_s.cpsr = tempPcb->p_s.cpsr | STATUS_SYS_MODE; //Kernel mode on
+		tempPcb->p_s.cpsr = STATUS_ENABLE_INT(tempPcb->p_s.cpsr); //Enable interrupt
+		tempPcb->p_s.cpsr = tempPcb->p_s.cpsr | STATUS_SYS_MODE; 
 		tempPcb->p_s.CP15_Control = CP15_DISABLE_VM(tempPcb->p_s.CP15_Control); //Disable VM
 		tempPcb->p_s.sp = RAM_TOP - FRAMESIZE * n;
 		tempPcb->p_s.pc = functionAddress;
-    
+		
 	#endif
 
 	tempPcb->priority = n;
@@ -269,19 +271,19 @@ int Eccezione(int linea, int device){
 }
 
 void stampaInt(int n){
-/*	
-	if(n < 0) termprint("ERRORE \n");
-	if(n == 0) termprint("ZERO \n");
-	if(n == 1) termprint("UNO \n");
-	if(n == 2) termprint("DUE \n");
-	if(n == 3) termprint("TRE \n");
-	if(n == 4) termprint("QUATTRO \n");
-	if(n == 5) termprint("CINQUE \n");
-	if(n == 6) termprint("SEI \n");
-	if(n == 7) termprint("SETTE \n");
-	if(n == 8) termprint("OTTO \n");
-	if(n > 8) termprint("ALTRO \n");
-*/
+
+	if(n < 0)  tprint("ERRORE \n");
+	if(n == 0) tprint("ZERO \n");
+	if(n == 1) tprint("UNO \n");
+	if(n == 2) tprint("DUE \n");
+	if(n == 3) tprint("TRE \n");
+	if(n == 4) tprint("QUATTRO \n");
+	if(n == 5) tprint("CINQUE \n");
+	if(n == 6) tprint("SEI \n");
+	if(n == 7) tprint("SETTE \n");
+	if(n == 8) tprint("OTTO \n");
+	if(n > 8)  tprint("ALTRO \n");
+
 }
 
 
@@ -320,23 +322,23 @@ int isChild(pcb_t *padre, pcb_t *pcbProgenie){
 
 
 void stampaCauseExc(int n){
-/*
-	if(n < 0) termprint("ERRORE \n");
-	if(n == 0) termprint("ZERO \n");
-	if(n == 1) termprint("UNO \n");
-	if(n == 2) termprint("DUE \n");
-	if(n == 3) termprint("TRE \n");
-	if(n == 4) termprint("QUATTRO \n");
-	if(n == 5) termprint("CINQUE \n");
-	if(n == 6) termprint("SEI \n");
-	if(n == 7) termprint("SETTE \n");
-	if(n == 8) termprint("OTTO \n");
-	if(n == 9) termprint("NOVE \n");
-	if(n == 10) termprint("DIECI \n");
-	if(n == 11) termprint("UNDICI \n");
-	if(n == 12) termprint("DODICI \n");
-	if(n == 13) termprint("TREDICI \n");
-	if(n == 14) termprint("QUATTORDICI \n");
-	if(n > 14) termprint("ALTRO \n");
-*/
+
+	if(n < 0)   tprint("ERRORE \n");
+	if(n == 0)  tprint("ZERO \n");
+	if(n == 1)  tprint("UNO \n");
+	if(n == 2)  tprint("DUE \n");
+	if(n == 3)  tprint("TRE \n");
+	if(n == 4)  tprint("QUATTRO \n");
+	if(n == 5)  tprint("CINQUE \n");
+	if(n == 6)  tprint("SEI \n");
+	if(n == 7)  tprint("SETTE \n");
+	if(n == 8)  tprint("OTTO \n");
+	if(n == 9)  tprint("NOVE \n");
+	if(n == 10) tprint("DIECI \n");
+	if(n == 11) tprint("UNDICI \n");
+	if(n == 12) tprint("DODICI \n");
+	if(n == 13) tprint("TREDICI \n");
+	if(n == 14) tprint("QUATTORDICI \n");
+	if(n > 14)  tprint("ALTRO \n");
+
 }

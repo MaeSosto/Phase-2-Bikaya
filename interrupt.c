@@ -220,14 +220,10 @@ void InterruptTerminal(){
 			
 			//Prendo il registro del device che ha lanciato l'interrupt
 			termreg_t *reg = (termreg_t *)DEV_REG_ADDR(INT_TERMINAL, i);
-			
-			//QUA LO STATUS È CHARACTER RECEIVED = 5
-
-			//Controllo se il terminale è in trasmissione o ricezione
-
+						
 			//Il terminale in RICEZIONE non è ready
 			if((reg->recv_status & TERMSTATMASK)!= 1){
-
+				
 				if(*Semaforo.terminalR[i].s_key < 0){
 									
 					//Sblocco il processo sul terminale in ricezione del device richiesto
@@ -269,18 +265,18 @@ void InterruptTerminal(){
 
 					#ifdef TARGET_UMPS
 					
-					//Aggiorno lo status del processo svegliato
-					GOODMORNING_PCB->p_s.reg_v0 = reg->transm_status;
+						//Aggiorno lo status del processo svegliato
+						GOODMORNING_PCB->p_s.reg_v0 = reg->transm_status;
 
-				#endif
+					#endif
 
-				#ifdef TARGET_UARM
+					#ifdef TARGET_UARM
 
-					//Aggiorno lo status del processo svegliato
-					GOODMORNING_PCB->p_s.a1 = reg->transm_status;
+						//Aggiorno lo status del processo svegliato
+						GOODMORNING_PCB->p_s.a1 = reg->transm_status;
 
 
-				#endif
+					#endif
 									
 				}
 				

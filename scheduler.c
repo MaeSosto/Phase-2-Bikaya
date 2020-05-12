@@ -148,6 +148,8 @@ void Scheduling(){
 					//Abilito tutti gli interrupt e vado in kernel mode
 					setSTATUS(getSTATUS() | STATUS_SYS_MODE);
 					setSTATUS(STATUS_ALL_INT_ENABLE(getSTATUS()));
+					setSTATUS(STATUS_ENABLE_TIMER(getSTATUS()));
+					setSTATUS(STATUS_ENABLE_INT(getSTATUS()));
 
 				#endif
 				
