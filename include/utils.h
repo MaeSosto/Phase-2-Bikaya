@@ -32,6 +32,10 @@
 		#define INTERRUPT_NEWAREA 0x2000008C
 		#define INTERRUPT_OLDAREA 0x20000000
 
+		#define BUS_TODLOW  0x1000001c
+		#define BUS_TODHIGH 0x10000018
+		#define getTODLO() (*((unsigned int *)BUS_TODLOW))
+
 	#endif
 
 	#ifdef TARGET_UARM
@@ -43,9 +47,7 @@
 
 	#endif
 
-	// #define BUS_TODLOW  0x1000001c
-	// #define BUS_TODHIGH 0x10000018
-	// #define getTODLO() (*((unsigned int *)BUS_TODLOW))
+
 
 	#define MAX_SEM 48
 	

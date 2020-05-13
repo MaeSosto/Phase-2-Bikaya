@@ -10,6 +10,7 @@
 
     #ifdef TARGET_UMPS
 
+        #include <umps/cp0.h>
         #include <umps/libumps.h> 
         #include <umps/types.h>
         #include <umps/arch.h>

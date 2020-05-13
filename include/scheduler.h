@@ -12,6 +12,10 @@
 		#include <umps/cp0.h>
 		extern void termprint(char* str);
 
+		#define BUS_TODLOW  0x1000001c
+		#define BUS_TODHIGH 0x10000018
+		#define getTODLO() (*((unsigned int *)BUS_TODLOW))
+
 	#endif
 
 	#ifdef  TARGET_UARM
@@ -22,9 +26,6 @@
 		
 	#endif
 
-	// #define BUS_TODLOW  0x1000001c
-	// #define BUS_TODHIGH 0x10000018
-	// #define getTODLO() (*((unsigned int *)BUS_TODLOW))
 	#define TIME_SLICE 3000
 
 	extern struct list_head* ready_queue;

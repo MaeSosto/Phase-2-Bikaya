@@ -22,6 +22,11 @@
 
 extern void stampaCauseExc(int n);
 
+void bp_test1(){}
+void bp_test2(){}
+void bp_test3(){}
+void bp_test4(){}
+
 #ifdef TARGET_UMPS
 #include "umps/libumps.h"
 #include "umps/arch.h"
@@ -183,6 +188,7 @@ void print(char *msg) {
 
     SYSCALL(VERHOGEN, (int)&term_mut, 0, 0); /* release term_mut */
 }
+
 
 
 /*                                                                   */
@@ -508,13 +514,22 @@ void p4a() {
 /* generate a TLB exception by turning on VM without setting up the
          seg tables */
 #ifdef TARGET_UMPS
+    bp_test1();
     p4Status = getSTATUS();
+    bp_test2();
     p4Status |= VMON;
+    bp_test3();
     setSTATUS(p4Status);
+    bp_test4();
 #elif defined TARGET_UARM
+    bp_test1();
     p4Status = getCONTROL();
+    bp_test2();
     p4Status |= VMON;
+    bp_test3();
     setCONTROL(p4Status);
+    bp_test4();
+
 #endif
 }
 

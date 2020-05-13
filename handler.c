@@ -453,14 +453,14 @@ void syscallHandler(){
 
 }
 
-//Gestore delle trap
+//TRAP HANDLER
 void trapHandler(){
 
 	unsigned int cause;
 
 	state_t *AREA = (state_t *) PGMTRAP_OLDAREA;
 
-	int arithoverflow = 0;
+	int flag = FALSE;
 
 	#ifdef TARGET_UMPS
 		
@@ -470,11 +470,12 @@ void trapHandler(){
 		//Accedo alla Old Area della system call
 		cause = (CAUSE_GET_EXCCODE(AREA->cause));
 
-		if(cause==EXC_ARITHOVERFLOW){
+		//UMPS: 4-5-6-7-10-11-12
+		if(cause==EXC_ADDRINVLOAD || cause==EXC_ADDRINVSTORE || cause==EXC_BUSINVFETCH || cause==EXC_BUSINVLDSTORE || cause==EXC_RESERVEDINSTR || cause==EXC_COPROCUNUSABLE || cause==EXC_ARITHOVERFLOW){
 
-			arithoverflow = 1;
+			flag = TRUE;
 		
-		} 
+		}
 	
 	#endif
 
@@ -483,9 +484,19 @@ void trapHandler(){
     	//Accedo alla Old Area della system call
 		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
 		
+		//UARM: 16-17-2-1
+		if(cause == EXC_ADDRINVLOAD || cause == EXC_ADDRINVSTORE || cause == EXC_BUSINVFETCH || cause == EXC_BUSINVLDSTORE || cause == MEMERROR){
+
+			flag = TRUE;
+		
+		}
+
 	#endif
 
-	if(cause==EXC_ADDRINVLOAD || cause==EXC_ADDRINVSTORE || cause==EXC_BUSINVFETCH || cause==EXC_BUSINVLDSTORE || cause==EXC_RESERVEDINSTR || cause==EXC_COPROCUNUSABLE || arithoverflow){
+		//umps 6 uarm 2 okk
+		stampaCauseExc(cause);
+
+	if(flag){
 
 
 		SavePCBToOldArea((state_t*)PGMTRAP_OLDAREA, &(ACTIVE_PCB->p_s));
@@ -527,6 +538,8 @@ void tlbHandler(){
 
 	state_t *AREA = (state_t *) TLB_OLDAREA;
 
+	int flag = FALSE;
+
 	#ifdef TARGET_UMPS
 		
 		//Aumentiamo di una word
@@ -534,7 +547,14 @@ void tlbHandler(){
 		
 		//Accedo alla Old Area della system call
 		cause = (CAUSE_GET_EXCCODE(AREA->cause));
-	
+
+		//UMPS Exc_CODE: 1-2-3-13-14
+		if(cause==EXC_TLBMOD || cause==EXC_TLBINVLOAD || cause==EXC_TLBINVSTORE || cause==EXC_BADPTE || cause==EXC_PTEMISS){
+
+			flag = TRUE;
+		
+		}
+
 	#endif
 
 	#ifdef TARGET_UARM
@@ -542,41 +562,53 @@ void tlbHandler(){
     	//Accedo alla Old Area della system call
 		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
 
-		stampaCauseExc(cause);
+		//UARM Exc_CODE: 18-14-15-10-11-9-8-12-13
+		if(cause == EXC_TLBMOD || cause ==  EXC_TLBINVLOAD || cause == EXC_TLBINVSTORE || cause == EXC_BADPTE || cause == EXC_PTEMISS || cause == EXC_BADPAGTBL || cause == EXC_BADSEGTBL || cause == UTLBLEXCEPTION || cause == UTLBSEXCEPTION){
+
+			flag = TRUE;
+
+		}
+
 
 	#endif
 	
-	//stampaCauseExc(cause);
+	//umps 13 uarm 12 - dovrebbe il 10
+	stampaCauseExc(cause);
 
 	bp_entering_hadler_TLB();
 
-	if(cause==EXC_TLBMOD || cause==EXC_TLBINVLOAD || cause==EXC_TLBINVSTORE || cause==EXC_BADPTE || cause==EXC_PTEMISS){
+	
+	if(flag){
 
+		bp_entering_hadler_TLB();
 
 		SavePCBToOldArea((state_t*)TLB_OLDAREA, &(ACTIVE_PCB->p_s));
 		
+		//Ho un gestore di livello superiore
 		if(ACTIVE_PCB->TLBNew != NULL && ACTIVE_PCB->TLBOld != NULL){
-			//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
-
+			
+			//Salvo lo stato dell'oldarea della TLB nel campo TLBOld dato che abbiamo assegnato un gestore di livelli superio nella specPASSUP
 			SavePCBToOldArea((state_t*)TLB_OLDAREA,  (ACTIVE_PCB->TLBOld));
 			
 			//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
 			LDST(ACTIVE_PCB->TLBNew);
 		
 		}
+
+		//Non ho il gestore asssegnato dalla specPassup 
 		else{
 
-			bp_hadler_TLB_else();
-
-			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
+			//Termino il processo e faccio partire lo Scheduling
 			TerminateProcess(0);
 
 			ACTIVE_PCB = NULL;
 
 			Scheduling();
 			
+		
 		}
-	}
+		
+	}	
 
 }
 
