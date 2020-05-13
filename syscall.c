@@ -1,16 +1,5 @@
 #include "include/syscall.h"
 
-void bp_term_proc_non_corrente(){}
-void bp_term_current_proc(){}
-void bp_term_figlio_not_found(){}
-void bp_term_ho_processi_figli(){}
-void bp_term_proc_in_semd(){}
-void bp_term_elimino_padre(){}
-
-void bp_type_SYS(){}
-void bp_type_TLB(){}
-void bp_type_TRAP(){}
-
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){
     
@@ -122,18 +111,14 @@ int TerminateProcess(void * pid){
     //Il processo da eliminare non è il corrente
     else{
 
-        bp_term_proc_non_corrente();
-
         tempPcb = pid;
 
-        if(tempPcb->p_parent==NULL){
-            bp_term_current_proc();
-        }
+        // if(tempPcb->p_parent==NULL){
+        //     bp_term_current_proc();
+        // }
 
         //Controllo se tempPCB è nella progenie di ACTIVEPCB, se non fa parte dela progenie è errore
         if( !isChild(ACTIVE_PCB, tempPcb) || (pid == NULL) ){
-            
-            bp_term_figlio_not_found();
             
             return -1;
 
@@ -174,8 +159,6 @@ int TerminateProcess(void * pid){
 
     //Controllo se il processo da eliminare è bloccato su un semaforo
     if(tempPcb->p_semkey != NULL){
-
-        bp_term_proc_in_semd();
 
         //Prendo il semaforo sulla quale è bloccato il processo
         int *semaforo = tempPcb->p_semkey;
@@ -401,51 +384,8 @@ int SpecPassup(int type, state_t *old, state_t *nuovo){
     // presente nell’area new. La system call deve essere
     // richiamata una sola volta per tipo (pena la terminazione). Se
     // la system call ha successo restituisce 0, altrimenti -1.
-/*
-    if((ACTIVE_PCB->SysOld != NULL || ACTIVE_PCB->SysNew != NULL) && type == 0)
-		return -1;
 
-	if((ACTIVE_PCB->TLBOld != NULL || ACTIVE_PCB->TLBNew != NULL) && type == 1)
-		return -1;
 
-	if((ACTIVE_PCB->PTOld != NULL || ACTIVE_PCB->PTOld != NULL) && type == 2)
-		return -1;
-
-	switch(type){
-		case 0:
-
-			//caso syscall/breakpoint
-			ACTIVE_PCB->SysOld = old;
-			ACTIVE_PCB->SysNew = nuovo;
-			return 0;
-
-			break;
-
-		case 1:
-
-			//caso TLB
-			ACTIVE_PCB->TLBOld = old;
-			ACTIVE_PCB->TLBNew = nuovo;
-			return 0;
-
-			break;
-
-		case 2:
-
-			//caso Program Trap
-			ACTIVE_PCB->PTOld = old;
-			ACTIVE_PCB->PTNew = nuovo;
-			return 0;
-
-			break;
-
-		default:
-
-			return -1;
-
-			break;
-	}
-*/
 
     //Se devo assegnare l'handler del livello superiore di una Sys o Bp e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
     if(type == 0 && ACTIVE_PCB->SysOld == NULL && ACTIVE_PCB->SysNew == NULL ){

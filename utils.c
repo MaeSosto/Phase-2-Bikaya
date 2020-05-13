@@ -342,7 +342,25 @@ int isChild(pcb_t *padre, pcb_t *pcbProgenie){
 
 
 void stampaCauseExc(int n){
-
+#ifdef TARGET_UARM
+	if(n < 0)   tprint("ERRORE \n");
+	if(n == 0)  tprint("ZERO \n");
+	if(n == 1)  tprint("UNO \n");
+	if(n == 2)  tprint("DUE \n");
+	if(n == 3)  tprint("TRE \n");
+	if(n == 4)  tprint("QUATTRO \n");
+	if(n == 5)  tprint("CINQUE \n");
+	if(n == 6)  tprint("SEI \n");
+	if(n == 7)  tprint("SETTE \n");
+	if(n == 8)  tprint("OTTO \n");
+	if(n == 9)  tprint("NOVE \n");
+	if(n == 10) tprint("DIECI \n");
+	if(n == 11) tprint("UNDICI \n");
+	if(n == 12) tprint("DODICI \n");
+	if(n == 13) tprint("TREDICI \n");
+	if(n == 14) tprint("QUATTORDICI \n");
+	if(n > 14)  tprint("ALTRO \n");
+#endif
 	#ifdef TARGET_UMPS
 	
 		if(n < 0)   termprint("ERRORE \n");
@@ -365,26 +383,5 @@ void stampaCauseExc(int n){
 
 	#endif
 
-	#ifdef TARGET_UARM
-	
-		if(n < 0)   tprint("ERRORE \n");
-		if(n == 0)  tprint("ZERO \n");
-		if(n == 1)  tprint("UNO \n");
-		if(n == 2)  tprint("DUE \n");
-		if(n == 3)  tprint("TRE \n");
-		if(n == 4)  tprint("QUATTRO \n");
-		if(n == 5)  tprint("CINQUE \n");
-		if(n == 6)  tprint("SEI \n");
-		if(n == 7)  tprint("SETTE \n");
-		if(n == 8)  tprint("OTTO \n");
-		if(n == 9)  tprint("NOVE \n");
-		if(n == 10) tprint("DIECI \n");
-		if(n == 11) tprint("UNDICI \n");
-		if(n == 12) tprint("DODICI \n");
-		if(n == 13) tprint("TREDICI \n");
-		if(n == 14) tprint("QUATTORDICI \n");
-		if(n > 14)  tprint("ALTRO \n");
-
-	#endif
 
 }

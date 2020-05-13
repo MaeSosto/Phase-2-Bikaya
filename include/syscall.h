@@ -10,10 +10,13 @@
 
     #ifdef TARGET_UMPS
 
-        #include <umps/cp0.h>
         #include <umps/libumps.h> 
         #include <umps/types.h>
         #include <umps/arch.h>
+    
+        #define BUS_TODLOW  0x1000001c
+        #define BUS_TODHIGH 0x10000018
+        #define getTODLO() (*((unsigned int *)BUS_TODLOW))
 
     #endif
 
@@ -26,9 +29,7 @@
     #endif
     
     #define MAX_SEM 48
-    // #define BUS_TODLOW  0x1000001c
-    // #define BUS_TODHIGH 0x10000018
-    // #define getTODLO() (*((unsigned int *)BUS_TODLOW))
+
 
     extern struct pcb_t *ACTIVE_PCB;
     extern struct pcb_t *GOODMORNING_PCB;

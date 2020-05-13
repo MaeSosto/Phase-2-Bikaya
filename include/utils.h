@@ -47,8 +47,7 @@
 
 	#endif
 
-
-
+	
 	#define MAX_SEM 48
 	
 	extern struct pcb_t *ACTIVE_PCB;

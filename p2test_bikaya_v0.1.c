@@ -20,12 +20,11 @@
  *      Modified by Mattia Maldini, Renzo Davoli 2020
  */
 
-extern void stampaCauseExc(int n);
+void test_1(){}
+void test_2(){}
+void test_3(){}
 
-void bp_test1(){}
-void bp_test2(){}
-void bp_test3(){}
-void bp_test4(){}
+extern void stampaCauseExc(int n);
 
 #ifdef TARGET_UMPS
 #include "umps/libumps.h"
@@ -188,7 +187,6 @@ void print(char *msg) {
 
     SYSCALL(VERHOGEN, (int)&term_mut, 0, 0); /* release term_mut */
 }
-
 
 
 /*                                                                   */
@@ -514,22 +512,19 @@ void p4a() {
 /* generate a TLB exception by turning on VM without setting up the
          seg tables */
 #ifdef TARGET_UMPS
-    bp_test1();
+    test_1();
     p4Status = getSTATUS();
-    bp_test2();
+    test_2();
     p4Status |= VMON;
-    bp_test3();
+    test_3();
     setSTATUS(p4Status);
-    bp_test4();
 #elif defined TARGET_UARM
-    bp_test1();
+    test_1();
     p4Status = getCONTROL();
-    bp_test2();
+    test_2();
     p4Status |= VMON;
-    bp_test3();
+    test_3();
     setCONTROL(p4Status);
-    bp_test4();
-
 #endif
 }
 

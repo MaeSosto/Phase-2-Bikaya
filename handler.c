@@ -1,20 +1,13 @@
 
 #include "include/handler.h"
 
-void bp_entering_hadler_TLB(){}
-
-void bp_handler_DOIO(){}
-
-void bp_hadler_term(){}
-
-void bp_sys_sot(){}
-
-void bp_getTodlo(){}
-
 void bp_hadler_TRAP_else(){}
 void bp_hadler_TLB_else(){}
-void bp_hadler_SYS8_else(){}
-void bp_hadler_SYS9_else(){}
+void bp_flag_TRUE(){}
+void bp_hadler_TLB_OK(){}
+void bp_hadler_TLB_NO_OK(){}
+void bp_hadler_TRAP_OK(){}
+void bp_hadler_TRAP_NO_OK(){}
 
 extern void stampaCauseExc(int n);
 #define INTERRUPT_PENDING_MASK     	0x0000ff00
@@ -332,7 +325,6 @@ void syscallHandler(){
 			GOODMORNING_PCB=ACTIVE_PCB;	
 			//termprint("SYS 6 \n");
 			ritorno = DO_IO((unsigned int)param1, (unsigned int*)param2, (int)param3);	
-			bp_handler_DOIO();
 		
 
 		}
@@ -354,8 +346,6 @@ void syscallHandler(){
 		
 		//se la syscall è maggiore di 8
 		else{
-
-			bp_hadler_SYS8_else();
 			
 			SavePCBToOldArea((state_t*)SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
 			
@@ -398,8 +388,6 @@ void syscallHandler(){
 		
 		}
 		else{
-
-			bp_hadler_SYS9_else();
 
 			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
 			TerminateProcess(0);
@@ -453,7 +441,7 @@ void syscallHandler(){
 
 }
 
-//TRAP HANDLER
+//Gestore delle trap
 void trapHandler(){
 
 	unsigned int cause;
@@ -492,16 +480,20 @@ void trapHandler(){
 		}
 
 	#endif
-
-		//umps 6 uarm 2 okk
-		stampaCauseExc(cause);
+	
+	//umps 6 uarm 2 okk
+	stampaCauseExc(cause);
 
 	if(flag){
 
+		bp_flag_TRUE();
 
 		SavePCBToOldArea((state_t*)PGMTRAP_OLDAREA, &(ACTIVE_PCB->p_s));
 		
 		if(ACTIVE_PCB->PTNew != NULL && ACTIVE_PCB->PTOld != NULL){
+			
+			bp_hadler_TRAP_OK();
+			
 			//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
 
 			SavePCBToOldArea((state_t*)PGMTRAP_OLDAREA,  (ACTIVE_PCB->PTOld));
@@ -511,6 +503,8 @@ void trapHandler(){
 		
 		}
 		else{
+			
+			bp_hadler_TRAP_NO_OK();
 
 			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
 			TerminateProcess(0);
@@ -538,7 +532,7 @@ void tlbHandler(){
 
 	state_t *AREA = (state_t *) TLB_OLDAREA;
 
-	int flag = FALSE;
+		int flag = FALSE;
 
 	#ifdef TARGET_UMPS
 		
@@ -569,46 +563,44 @@ void tlbHandler(){
 
 		}
 
-
 	#endif
 	
-	//umps 13 uarm 12 - dovrebbe il 10
+	//umps 13 uarm 2 okk
 	stampaCauseExc(cause);
 
-	bp_entering_hadler_TLB();
-
-	
 	if(flag){
 
-		bp_entering_hadler_TLB();
+		bp_flag_TRUE();
 
 		SavePCBToOldArea((state_t*)TLB_OLDAREA, &(ACTIVE_PCB->p_s));
 		
-		//Ho un gestore di livello superiore
 		if(ACTIVE_PCB->TLBNew != NULL && ACTIVE_PCB->TLBOld != NULL){
 			
-			//Salvo lo stato dell'oldarea della TLB nel campo TLBOld dato che abbiamo assegnato un gestore di livelli superio nella specPASSUP
+			bp_hadler_TLB_OK();
+			
+			//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
+
 			SavePCBToOldArea((state_t*)TLB_OLDAREA,  (ACTIVE_PCB->TLBOld));
 			
 			//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
 			LDST(ACTIVE_PCB->TLBNew);
 		
 		}
-
-		//Non ho il gestore asssegnato dalla specPassup 
 		else{
 
-			//Termino il processo e faccio partire lo Scheduling
+			bp_hadler_TLB_NO_OK();
+
+			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
 			TerminateProcess(0);
 
 			ACTIVE_PCB = NULL;
 
 			Scheduling();
 			
-		
 		}
-		
-	}	
+	}else{
+		PANIC();
+	}
 
 }
 
