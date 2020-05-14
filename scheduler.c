@@ -20,13 +20,9 @@ void Aging(){
 }
 
 void ContextSwitch(){
-  
-  	//termprint(" Entro nel context switch\n");
 
 	//Ho un processo in esecuzione
 	if(ACTIVE_PCB != NULL){
-
-		//termprint("Context: ho processi in esecuzione \n");
 		
 		//Ripristiniamo l'original_priority del processo appena concluso
   		ACTIVE_PCB->priority = ACTIVE_PCB->original_priority;
@@ -36,8 +32,7 @@ void ContextSwitch(){
 
 		#ifdef TARGET_UMPS
 			
-			//fermo tempo in kernel mode del proc che mettiamo nella ready queue??
-			//Faccio 
+			//Fermo tempo in kernel mode del proc che mettiamo nella ready queue??
 			if(ACTIVE_PCB->kernel_start>0){
 
 				ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
@@ -90,15 +85,11 @@ void ContextSwitch(){
 
 //Setta un Time slice di 3000ms e alterna i processi in coda sulla Ready Queue e li carica nel processore
 void Scheduling(){
-	
-	//termprint("Scheduler: HO TOT PROCESSI BLOCCATI: ");
-	//stampaInt(BLOCK_COUNT);	
+
 	//La coda dei processi non è vuota
 	if(!emptyProcQ(ready_queue)){
 		
-		//termprint("Scheduler: coda dei processi non vuota \n");
 		//Faccio un context switch per prendere il processo successivo
-
 		ContextSwitch();
 	}
 
@@ -109,8 +100,7 @@ void Scheduling(){
 
 		//Ho processi in esecuzione
 		if(ACTIVE_PCB != NULL){
-			
-			//termprint("Scheduler: cho processi in esecuzione \n");
+
 			//Metto via il processo corrente in cpu e ne prendo un'altro
 			ContextSwitch();
 
@@ -120,16 +110,9 @@ void Scheduling(){
 		else{
 
 			//Controllo se ho processi bloccati nei semafori
-			//termprint("Scheduler: non ho processi in esecuzione \n");
-
-			//termprint("Scheduler: Ho ");
-			//stampaInt(BLOCK_COUNT);
-			//termprint("processi bloccati \n");
-
-			//Controllo se ho processi bloccati
 			if(BLOCK_COUNT > 0){
 
-				//termprint("Scheduler: Ho solo processi bloccati, aspetto \n");
+				//Ho solo processi bloccati, aspetto
 
 				//Setto il timer
   				*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
@@ -152,15 +135,14 @@ void Scheduling(){
 					setSTATUS(STATUS_ENABLE_INT(getSTATUS()));
 
 				#endif
-				
+
 				//aspetto che si sollevi un interrupt da un device. Questo mi sblocca un processo in attesa sul semaforo del device.
 				WAIT();
 			}
 			
 			//Non ci sono processi in ready queue, nè attivi, nè bloccati sui semafori
 			else{
-				
-				//termprint("Scheduling: Non ci sono processi in ready queue, ne' attivi, ne' bloccati sui semafori \n");
+
 				HALT();
 
 			}

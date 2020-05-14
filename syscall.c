@@ -46,11 +46,7 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
 
     //Creo nuovo processo figlio
     pcb_t* tempPcb = allocPcb();
-    
-    // Controllo che l'indirizzo sia corretto
-    //*((pcb_t **)cpid) = tempPcb;
    
-
     if (tempPcb != NULL){ //Ha successo: cpid non NULL e tempPcb allocato correttamente
 
         //Assegno lo stato del nuovo processo figlio
@@ -76,8 +72,9 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
         return 0;
         
     }
-			
-    else{ //Non ha successo
+	
+    //Non ha successo	
+    else{ 
 
         return -1;
             
@@ -112,7 +109,8 @@ int TerminateProcess(void * pid){
     else{
 
         tempPcb = pid;
-
+        
+        // senti con vice sto controllo - sara
         // if(tempPcb->p_parent==NULL){
         //     bp_term_current_proc();
         // }
@@ -129,11 +127,9 @@ int TerminateProcess(void * pid){
     pcb_t *figlio;
 
     //caso ricorsivo: tempPCB ha dei figli - chiamo la TerminateProcess sui figli
-    //Controllo se il processo da eliminare ha figli
     if( !emptyChild(tempPcb) ){
 
         //Elimino la progenie del tempPcb
-        //figlio = removeChildNonOrfano(tempPcb);
         figlio = returnFirstChild(tempPcb);
 
         while(figlio != NULL){
@@ -148,14 +144,10 @@ int TerminateProcess(void * pid){
     //caso base: tempPCB è una foglia (non ha figli da eliminare - non deve andare in ricorsione)
     else {
 
-        //settare il padre del tempPCB = NULL
-        //togliere il tempPCB dalla lista dei padre->p_figli
+        //Togliere il tempPCB dalla lista dei padre->p_figli
         outChild(tempPcb);
 
     }
-
-    
-
 
     //Controllo se il processo da eliminare è bloccato su un semaforo
     if(tempPcb->p_semkey != NULL){
@@ -185,7 +177,7 @@ int TerminateProcess(void * pid){
     
     }
 
-tempPcb->p_parent = NULL;
+tempPcb->p_parent = NULL; //vedi se funziona anche senza sto comando (sia umps che uarm)
 
     freePcb(tempPcb);
 
@@ -258,7 +250,7 @@ void Passeren(int *semaddr){
         // L'ACTIVE PCB VA MESSO A NULL ALLA FINE DELLA SYSCALL PRIMA DI CHIAMARE LO SCHEDULER
         ACTIVE_PCB = NULL;
 
-        //assegnamento al semd NON andato a buon fine
+        //Assegnamento al semd NON andato a buon fine
         if(ret){
 
             PANIC();
@@ -389,8 +381,6 @@ int SpecPassup(int type, state_t *old, state_t *nuovo){
 
     //Se devo assegnare l'handler del livello superiore di una Sys o Bp e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
     if(type == 0 && ACTIVE_PCB->SysOld == NULL && ACTIVE_PCB->SysNew == NULL ){
-        
-        //bp_type_SYS();
 
         //Assegno le aree
         ACTIVE_PCB->SysOld = old;
@@ -401,9 +391,7 @@ int SpecPassup(int type, state_t *old, state_t *nuovo){
     }
 
     //Se devo assegnare l'handler del livello superiore di una TLB e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
-    if(type == 1 && ACTIVE_PCB->TLBOld == NULL && ACTIVE_PCB->TLBNew == NULL ){
-        
-        //bp_type_TLB();
+    if(type == 1 && ACTIVE_PCB->TLBOld == NULL && ACTIVE_PCB->TLBNew == NULL ){        
 
         //Assegno le aree
         ACTIVE_PCB->TLBOld = old;
@@ -415,8 +403,6 @@ int SpecPassup(int type, state_t *old, state_t *nuovo){
 
     //Se devo assegnare l'handler del livello superiore di una Program trap e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
     if(type == 2 && ACTIVE_PCB->PTOld == NULL && ACTIVE_PCB->PTNew == NULL ){
-        
-        //bp_type_TRAP();
 
         //Assegno le aree
         ACTIVE_PCB->PTOld = old;
@@ -452,7 +438,7 @@ void getPid(void ** pid, void ** ppid){
 
     }
 
-    //assegna l'identificativo del processo genitore a *ppid
+    //Assegna l'identificativo del processo genitore a *ppid
     if (ppid != NULL){
         
         //Assegno l'id del genitore

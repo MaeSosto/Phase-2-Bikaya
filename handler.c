@@ -482,7 +482,7 @@ void trapHandler(){
 	#endif
 	
 	//umps 6 uarm 2 okk
-	stampaCauseExc(cause);
+	//stampaCauseExc(cause);
 
 	if(flag){
 
@@ -514,10 +514,6 @@ void trapHandler(){
 			Scheduling();
 			
 		}
-
-	}else{
-
-		PANIC();
 
 	}
 
@@ -566,7 +562,7 @@ void tlbHandler(){
 	#endif
 	
 	//umps 13 uarm 2 okk
-	stampaCauseExc(cause);
+	//stampaCauseExc(cause);
 
 	if(flag){
 
@@ -598,9 +594,7 @@ void tlbHandler(){
 			Scheduling();
 			
 		}
-	}else{
-		PANIC();
+
 	}
 
 }
-

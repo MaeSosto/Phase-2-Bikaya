@@ -20,9 +20,7 @@
  *      Modified by Mattia Maldini, Renzo Davoli 2020
  */
 
-void test_1(){}
-void test_2(){}
-void test_3(){}
+
 
 extern void stampaCauseExc(int n);
 
@@ -512,18 +510,12 @@ void p4a() {
 /* generate a TLB exception by turning on VM without setting up the
          seg tables */
 #ifdef TARGET_UMPS
-    test_1();
     p4Status = getSTATUS();
-    test_2();
     p4Status |= VMON;
-    test_3();
     setSTATUS(p4Status);
 #elif defined TARGET_UARM
-    test_1();
     p4Status = getCONTROL();
-    test_2();
     p4Status |= VMON;
-    test_3();
     setCONTROL(p4Status);
 #endif
 }
