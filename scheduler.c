@@ -29,55 +29,34 @@ void ContextSwitch(){
 
 		//Faccio l'aging
 		Aging();
-
-		#ifdef TARGET_UMPS
-			
-			//Fermo tempo in kernel mode del proc che mettiamo nella ready queue??
-			if(ACTIVE_PCB->kernel_start>0){
-
-				ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
-				ACTIVE_PCB->kernel_start=0;
-
-			}
 		
-		#endif
-		
+		//Il processo smette di essere quello attivo quindi termina la sua user mode
+		stopUserTime(ACTIVE_PCB);
+
 		//Metto il processo nella Ready Queue
   		insertProcQ(ready_queue, ACTIVE_PCB);
 
 		ACTIVE_PCB = NULL;
+
 	}
 	
-	//Non ho processi in esecuzione
-	else{
-		
-		//termprint("Context : non ho processi in esecuzione \n");
-
-
-  	}
-
 	//Prendo il processo in testa alla ready queue
 	ACTIVE_PCB = removeProcQ(ready_queue);
-  
-    //Setto il timer del processo
+
+	//Se non ho ancora settato il tempo iniziale
+	if(!getWallclockTime(ACTIVE_PCB)){q
+
+		//Assegno il tempo iniziale
+		setWallclockTime(ACTIVE_PCB);
+
+	}
+
+	//Inizio a contare il tempo in user mode
+	startUserTime(ACTIVE_PCB);
+
+    //Setto il timer di 3ms che gestisce lo switch tra i processi
     *(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
 	
-	#ifdef TARGET_UMPS
-
-		//Se non ho mai settato il tempo iniziale 
-		if(!ACTIVE_PCB->wallclock_start){
-		
-			//Assegno il tempo assoluto di inizio del processo
-			ACTIVE_PCB->wallclock_start = getTODLO();
-
-		}
-
-
-		//Inizio a contare il tempo in user mode
-		ACTIVE_PCB->user_start = getTODLO();
-	
-	#endif 
-
 	//Carico il processo nel processore
    	LDST(&ACTIVE_PCB->p_s);   
 

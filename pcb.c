@@ -37,6 +37,14 @@ struct pcb_t *allocPcb(void){
 	tempPcb->p_parent = NULL;
 	tempPcb->p_semkey = NULL;
 
+	//Campi usati per la gestione delle aree sys/trap/tlb
+	tempPcb->SysOld = NULL;
+    tempPcb->SysNew = NULL;
+    tempPcb->TLBOld = NULL;
+    tempPcb->TLBNew = NULL;
+    tempPcb->PTOld =  NULL;
+    tempPcb->PTNew =  NULL;
+
 	//Campi di tipo intero: imposto a 0
 	#ifdef TARGET_UMPS
 		tempPcb->priority = 0;
@@ -82,13 +90,7 @@ struct pcb_t *allocPcb(void){
     tempPcb->kernel_total = 0;
     tempPcb->start_time = 0;
     tempPcb->wallclock_start = 0;
-	tempPcb->SysOld = NULL;
-    tempPcb->SysNew = NULL;
-    tempPcb->TLBOld = NULL;
-    tempPcb->TLBNew = NULL;
-    tempPcb->PTOld =  NULL;
-    tempPcb->PTNew =  NULL;
-
+	
 	//Campi di tipo list_head: uso INIT_LIST_HEAD
 	INIT_LIST_HEAD(&tempPcb->p_next);
 	INIT_LIST_HEAD(&tempPcb->p_child);
@@ -210,18 +212,8 @@ struct pcb_t *outChild(struct pcb_t *p){
 /*  Funzioni nostre per fase 2  */
 /********************************/
 
-/* 14 - Rimuove il primo figlio del PCB puntato da p. Se p non ha figli, restituisce NULL. */
-struct pcb_t *removeChildNonOrfano(struct pcb_t *p){
-	if(emptyChild(p)) return NULL;	//Se non ha figli -> NULL
+/* 14 - Restituisce il puntatore al primo figlio di p SENZA RIMUOVERLO dalla lista p_sib. */
 
-	//p ha figli: restituisco il primo
-	struct pcb_t *primofiglio = container_of(list_next(&p->p_child),struct pcb_t, p_sib); //pcb del primo figlio
-	list_del(&(primofiglio->p_sib)); //Rimuove primofiglio dalla lista puntata da p_child: ovvero elimina p_sib dalla lista in cui è.
-	//primofiglio->p_parent = NULL; //Aggiorna a NULL il campo p_parent di primofiglio
-	return primofiglio; //Restituisce il puntatore al primo figlio di p.
-}
-
-/* 15 - Restituisce il primo figlio */
 struct pcb_t *returnFirstChild(struct pcb_t *p){
 	//p non ha figli -> NULL
 	if(emptyChild(p)) return NULL;
@@ -230,4 +222,3 @@ struct pcb_t *returnFirstChild(struct pcb_t *p){
 	struct pcb_t *primofiglio = container_of(list_next(&p->p_child),struct pcb_t, p_sib); //pcb del primo figlio
 	return primofiglio; //Restituisce il puntatore al primo figlio di p.
 };
-

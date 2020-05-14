@@ -132,7 +132,7 @@ struct pcb_t *initAllPCB(unsigned int functionAddress, int priority){
 
 	tempPcb->priority = n;
 	tempPcb->original_priority = n;
-  	//tempPcb->wallclock_start=getTODLO();
+  
 	return tempPcb;
   
 }
@@ -307,23 +307,20 @@ void stampaInt(int n){
 }
 
 
-
-					//  			child1
-					// p7root     p7root->child
-//Funzione che controlla se pcbProgenie è figlio di padre (o se sta nella sua progenie)
+//Funzione che ritorna 1 se pcbProgenie sta nella sua progenie di padre
 int isChild(pcb_t *padre, pcb_t *pcbProgenie){
-//ritorna true se il processo da terminare si trova all'interno della progenie del curr_proc
+
 
 	int appoggio = 0;
 
-	//caso base: in cui il pcb ha padre null 
+	//caso base insuccesso: in cui il pcb ha padre null 
 	if(pcbProgenie->p_parent == NULL){
 		
 		return 0;
 	
 	}
 
-	//caso base: ho trovato il padre
+	//caso base successo: ho trovato il padre
 	if(padre == pcbProgenie->p_parent){
 
 		//Ho trovato 
@@ -342,27 +339,29 @@ int isChild(pcb_t *padre, pcb_t *pcbProgenie){
 
 
 void stampaCauseExc(int n){
-#ifdef TARGET_UARM
-	if(n < 0)   tprint("ERRORE \n");
-	if(n == 0)  tprint("ZERO \n");
-	if(n == 1)  tprint("UNO \n");
-	if(n == 2)  tprint("DUE \n");
-	if(n == 3)  tprint("TRE \n");
-	if(n == 4)  tprint("QUATTRO \n");
-	if(n == 5)  tprint("CINQUE \n");
-	if(n == 6)  tprint("SEI \n");
-	if(n == 7)  tprint("SETTE \n");
-	if(n == 8)  tprint("OTTO \n");
-	if(n == 9)  tprint("NOVE \n");
-	if(n == 10) tprint("DIECI \n");
-	if(n == 11) tprint("UNDICI \n");
-	if(n == 12) tprint("DODICI \n");
-	if(n == 13) tprint("TREDICI \n");
-	if(n == 14) tprint("QUATTORDICI \n");
-	if(n > 14)  tprint("ALTRO \n");
-#endif
+
+	#ifdef TARGET_UARM
+		if(n < 0)   tprint("ERRORE \n");
+		if(n == 0)  tprint("ZERO \n");
+		if(n == 1)  tprint("UNO \n");
+		if(n == 2)  tprint("DUE \n");
+		if(n == 3)  tprint("TRE \n");
+		if(n == 4)  tprint("QUATTRO \n");
+		if(n == 5)  tprint("CINQUE \n");
+		if(n == 6)  tprint("SEI \n");
+		if(n == 7)  tprint("SETTE \n");
+		if(n == 8)  tprint("OTTO \n");
+		if(n == 9)  tprint("NOVE \n");
+		if(n == 10) tprint("DIECI \n");
+		if(n == 11) tprint("UNDICI \n");
+		if(n == 12) tprint("DODICI \n");
+		if(n == 13) tprint("TREDICI \n");
+		if(n == 14) tprint("QUATTORDICI \n");
+		if(n > 14)  tprint("ALTRO \n");
+	#endif
+
 	#ifdef TARGET_UMPS
-	
+
 		if(n < 0)   termprint("ERRORE \n");
 		if(n == 0)  termprint("ZERO \n");
 		if(n == 1)  termprint("UNO \n");
@@ -383,5 +382,51 @@ void stampaCauseExc(int n){
 
 	#endif
 
+}
+
+
+//Restituisce il tempo parziale passato da quado ho settato il kernel time
+void stopKernelTime(pcb_t * p){
+
+	p->kernel_total = p->kernel_total + (getTODLO() - p->kernel_start);
+	p->wallclock_start = p->wallclock_start + (getTODLO()- p->kernel_start);
+	p->kernel_start = 0;
+
+}
+
+//Il tempo passato in user mode viene archiviato in user total e wallclock e e viene azzerato user start
+void stopUserTime(pcb_t *p){
+
+	p->user_total = p->user_total + (getTODLO()- p->user_start);
+	p->wallclock_start = p->wallclock_start + (getTODLO()- p->user_start);
+	p->user_start = 0;
+
+}
+
+//Restituisco il wallclock start
+int getWallclockTime(pcb_t * p){
+
+	return p->wallclock_start;
+
+}
+
+//Assegno il tempo iniziale
+void setWallclockTime(pcb_t *p){
+
+	p->wallclock_start = getTODLO();
+
+}
+
+//Inizia a contare il tempo in kernel mode
+void startKernelTime(pcb_t *p){
+
+	p->kernel_start = getTODLO();
+
+}
+
+//Inizia a contare il tempo in user mode
+void startUserTime(pcb_t *p){
+	
+	p->user_start = getTODLO();
 
 }

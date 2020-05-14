@@ -30,12 +30,8 @@
 		#define TLB_OLDAREA 0x20000118
 		#define TLB_NEWAREA 0x200001A4
 		#define INTERRUPT_NEWAREA 0x2000008C
-		#define INTERRUPT_OLDAREA 0x20000000
-
-		#define BUS_TODLOW  0x1000001c
-		#define BUS_TODHIGH 0x10000018
-		#define getTODLO() (*((unsigned int *)BUS_TODLOW))
-
+		#define INTERRUPT_OLDAREA 0x20000
+	
 	#endif
 
 	#ifdef TARGET_UARM
@@ -82,5 +78,26 @@
 
 	//Funzione che controlla se cercare è figlio di padre (o se sta nella sua progenie)
 	int isChild(pcb_t *padre, pcb_t *cercare);
+
+	
+	/* Funzioni per la gestione del tempo */
+
+	//Restituisce il tempo parziale passato da quado ho settato il kernel time
+	void stopKernelTime(pcb_t * p);
+
+	//Il tempo passato in user mode viene archiviato in user total e viene azzerato user start
+	void stopUserTime(pcb_t *p);
+
+	//Restituisco il wallclock start
+	int getWallclockTime(pcb_t * p);
+
+	//Assegno il tempo iniziale
+	void setWallclockTime(pcb_t *p);
+
+	//Inizia a contare il tempo in kernel mode
+	void startKernelTime();
+
+	//Inizia a contare il tempo in user mode
+	void startUserTime(pcb_t *p);
 
 #endif

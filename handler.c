@@ -21,28 +21,27 @@ int tempo=FALSE;
 //Gestore degli interrupt
 void interruptHandler(){
 	
-	tempo = FALSE;
-
-	//Se il processo non è NULL gestisco il tempo
+	//Controllo se ho un processo attivo (perché non dovrei averlo?)
 	if(ACTIVE_PCB != NULL){
-		
-		#ifdef TARGET_UMPS
-			if(ACTIVE_PCB->user_start > 0){
 
-				//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
-				ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
+		//Non so se vengo da user mode o da kernel mode ma in ogni modo smetto di contare il tempo
+		stopUserTime(ACTIVE_PCB);
+		stopKernelTime(ACTIVE_PCB);
 
-				//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
-				ACTIVE_PCB->user_start = 0;
-				
-			}
-		
-		#endif
+		//Inizio a contare il tempo in kernel mode
+		startKernelTime(ACTIVE_PCB);
 
-		//inizio a contare il tempo in kernel mode
-		//ACTIVE_PCB->kernel_start = getTODLO();
 	}
+	
+	else{
 
+		PANIC();
+	
+	}
+	
+
+
+	tempo = FALSE;
 
 	//Prendo l' old area dell'interrupt al processo
 	state_t *AREA=(state_t *) INT_OLDAREA;
@@ -70,26 +69,12 @@ void interruptHandler(){
 
 	#endif
 
-	
-	//Linee interrupt da confrontare per trovare l'interrupt giusto fra gli 8 possibili
-	if(ACTIVE_PCB != NULL){
-
-		#ifdef TARGET_UMPS
-
-			//inizio a contare il tempo in kernel mode
-			ACTIVE_PCB->kernel_start = getTODLO();
-
-		#endif
-	}
 
 	#ifdef TARGET_UMPS
 		//Interrupt 1 - Inter-processor interrupts
 		if(CAUSE_IP_GET(cause, INT_T_SLICE)){
 			
 			InterruptPLC();
-			//????
-		// 	 setTIMER(TIME_SLICE);
-		//   scheduler();
 		
 		}
 
@@ -162,23 +147,9 @@ void interruptHandler(){
 	//Non ho processi attivi in cpu
 	if((tempo) | (ACTIVE_PCB==NULL)){
 		
+		//Se il processo non è NULL getisco il tempo
 		if(ACTIVE_PCB != NULL){
-			//Salvo i registri dell'old area dell'interrupt al processo
-			state_t *AREA=(state_t *) INT_OLDAREA;
-
-			/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
-			SavePCBToOldArea(AREA, &(ACTIVE_PCB->p_s));
-
 			
-			//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
-			//ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
-			
-			#ifdef TARGET_UMPS
-			
-				//Faccio partire l'user mode perchè finisco un interrupt
-				ACTIVE_PCB->user_start = getTODLO(); 
-
-			#endif 
 		
 		}
 
@@ -191,17 +162,7 @@ void interruptHandler(){
 
 	//Controllo se ho processi attivi
 	else if(ACTIVE_PCB != NULL){
-		
-		#ifdef TARGET_UMPS
-
-			// //Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
-			 //ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
-
-			ACTIVE_PCB->user_start = getTODLO(); 
-
-		#endif 
-
-
+	
 		Scheduling();
 		
 	}
@@ -213,23 +174,22 @@ void interruptHandler(){
 //Gestore delle system call
 void syscallHandler(){
 
-	//Se il processo non è NULL gestisco il tempo
+	//Controllo se ho un processo attivo (perché non dovrei averlo?)
 	if(ACTIVE_PCB != NULL){
-		
-		#ifdef TARGET_UMPS
-			
-			if(ACTIVE_PCB->user_start > 0){
 
-				//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
-				ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
+		//Non so se vengo da user mode o da kernel mode ma in ogni modo smetto di contare il tempo
+		stopUserTime(ACTIVE_PCB);
+		stopKernelTime(ACTIVE_PCB);
 
-				//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
-				ACTIVE_PCB->user_start = 0;
-				
-			}
-		
-		#endif
+		//Inizio a contare il tempo in kernel mode
+		startKernelTime(ACTIVE_PCB);
 
+	}
+	
+	else{
+
+		PANIC();
+	
 	}
 
 	unsigned int cause;
@@ -410,16 +370,8 @@ void syscallHandler(){
 		
 			ACTIVE_PCB->p_s.reg_v0 = ritorno;
 
-			//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
-			ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
+		#endif 
 
-			//Setto
-			ACTIVE_PCB->kernel_start = 0;
-
-			//Faccio partire l'user mode perchè finisco un interrupt
-			ACTIVE_PCB->user_start = getTODLO();
-
-		#endif
 
 		#ifdef TARGET_UARM
 
@@ -443,6 +395,24 @@ void syscallHandler(){
 
 //Gestore delle trap
 void trapHandler(){
+
+	//Controllo se ho un processo attivo (perché non dovrei averlo?)
+	if(ACTIVE_PCB != NULL){
+
+		//Non so se vengo da user mode o da kernel mode ma in ogni modo smetto di contare il tempo
+		stopUserTime(ACTIVE_PCB);
+		stopKernelTime(ACTIVE_PCB);
+
+		//Inizio a contare il tempo in kernel mode
+		startKernelTime(ACTIVE_PCB);
+
+	}
+	
+	else{
+
+		PANIC();
+	
+	}
 
 	unsigned int cause;
 
@@ -524,6 +494,24 @@ void trapHandler(){
 //TLB HADLER
 void tlbHandler(){
 
+	//Controllo se ho un processo attivo (perché non dovrei averlo?)
+	if(ACTIVE_PCB != NULL){
+
+		//Non so se vengo da user mode o da kernel mode ma in ogni modo smetto di contare il tempo
+		stopUserTime(ACTIVE_PCB);
+		stopKernelTime(ACTIVE_PCB);
+
+		//Inizio a contare il tempo in kernel mode
+		startKernelTime(ACTIVE_PCB);
+
+	}
+	
+	else{
+
+		PANIC();
+	
+	}
+	
 	unsigned int cause;
 
 	state_t *AREA = (state_t *) TLB_OLDAREA;

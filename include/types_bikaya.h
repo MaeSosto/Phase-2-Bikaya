@@ -46,12 +46,12 @@
 
 
         // timer di esecuzione
-        unsigned int user_start;
-        unsigned int user_total;
-        unsigned int kernel_start;
-        unsigned int kernel_total;
-        unsigned int start_time;
-        unsigned int wallclock_start;
+        unsigned int user_start;        //variabile di appoggio per user
+        unsigned int user_total;        //tempo totale in user mode
+        unsigned int kernel_start;      //variabile di appoggio per kernel
+        unsigned int kernel_total;      //tempo totale in kernel mode
+        unsigned int start_time;        //variabile di appoggio per wallclock
+        unsigned int wallclock_start;   //La prima volta che viene caricato un processo
 
         //Aree in caso si passasse a un livello superiore
         state_t *SysOld;

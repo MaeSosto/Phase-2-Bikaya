@@ -41,11 +41,7 @@
         //#define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 24)))
 
     #endif
-
-    // #define BUS_TODLOW  0x1000001c
-    // #define BUS_TODHIGH 0x10000018
-    // #define getTODLO() (*((unsigned int *)BUS_TODLOW))
-        
+       
     extern struct pcb_t *ACTIVE_PCB;
     extern struct list_head* ready_queue;
 

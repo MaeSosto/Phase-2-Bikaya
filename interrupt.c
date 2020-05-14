@@ -2,7 +2,7 @@
 
 extern int tempo;
 
-//PROCESSOR LOCAL TIMER 1 - DA ELIMINARE
+//PROCESSOR LOCAL TIMER 1 - DA ELIMINARE????
 void InterruptPLC(){
 	
 	//????
