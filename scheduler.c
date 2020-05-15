@@ -1,8 +1,5 @@
 #include "include/scheduler.h"
 
-void bp_aging(){}
-
-
 //Auementa di 1 unità la priorità di ogni processo in coda e reimposta la priorità origiale del processo che è appena stato eseguito e lo rimette in attesa
 void Aging(){
    
@@ -42,41 +39,32 @@ void ContextSwitch(){
 		
 		#endif
 		
+		//Smetto di contare il tempo in user mode
+		stopUserTime(ACTIVE_PCB);
+
 		//Metto il processo nella Ready Queue
   		insertProcQ(ready_queue, ACTIVE_PCB);
 
 		ACTIVE_PCB = NULL;
+
 	}
 	
-	//Non ho processi in esecuzione
-	else{
-		
-		//termprint("Context : non ho processi in esecuzione \n");
-
-
-  	}
-
 	//Prendo il processo in testa alla ready queue
 	ACTIVE_PCB = removeProcQ(ready_queue);
   
     //Setto il timer del processo
     *(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
 	
-	#ifdef TARGET_UMPS
-
-		//Se non ho mai settato il tempo iniziale 
-		if(!ACTIVE_PCB->wallclock_start){
-		
-			//Assegno il tempo assoluto di inizio del processo
-			ACTIVE_PCB->wallclock_start = getTODLO();
-
-		}
-
-
-		//Inizio a contare il tempo in user mode
-		ACTIVE_PCB->user_start = getTODLO();
+	//Se non ho mai settato il tempo iniziale 
+	if(ACTIVE_PCB->wallclock_start == 0){
 	
-	#endif 
+		//Assegno il tempo assoluto di inizio del processo
+		ACTIVE_PCB->wallclock_start = getTODLO();
+
+	}
+
+	//Faccio partire il tempo in user mode
+	startUserTime(ACTIVE_PCB);
 
 	//Carico il processo nel processore
    	LDST(&ACTIVE_PCB->p_s);   
@@ -85,6 +73,14 @@ void ContextSwitch(){
 
 //Setta un Time slice di 3000ms e alterna i processi in coda sulla Ready Queue e li carica nel processore
 void Scheduling(){
+
+	if(ACTIVE_PCB != NULL){
+
+		stopKernelTime(ACTIVE_PCB);
+		stopUserTime(ACTIVE_PCB);
+		startUserTime(ACTIVE_PCB);
+
+	}
 
 	//La coda dei processi non è vuota
 	if(!emptyProcQ(ready_queue)){

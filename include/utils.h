@@ -63,10 +63,7 @@
 	struct pcb_t *initAllPCB(unsigned int functionAddress, int priority);
 
 	//Salvo lo stato del PCB nella old area
-	void SavePCBToOldArea(state_t* processo, state_t* oldarea);
-
-	//Salva il processo prima di poterlo mettere di nuovo nella ready queue
-	void SaveProc();
+	void SaveState(state_t* processo, state_t* oldarea);
 
 	//Alloca spazio in memoria per i semafori dei device
 	void InitSemd();
@@ -82,5 +79,22 @@
 
 	//Funzione che controlla se cercare è figlio di padre (o se sta nella sua progenie)
 	int isChild(pcb_t *padre, pcb_t *cercare);
+
+	//Restituisce il tempo parziale passato da quado ho settato il kernel time	
+	void stopKernelTime(pcb_t * p);
+
+	//Il tempo passato in user mode viene archiviato in user total e wallclock e e viene azzerato user start
+	void stopUserTime(pcb_t *p);
+
+	//Assegno il tempo iniziale
+	void startWallclockTime(pcb_t *p);
+
+	//Inizia a contare il tempo in kernel mode
+	void startKernelTime(pcb_t *p);
+
+	//Inizia a contare il tempo in user mode
+	void startUserTime(pcb_t *p);
+
+
 
 #endif

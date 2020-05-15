@@ -4,6 +4,7 @@
 	#include "pcb.h"
 	#include "listx.h"
 	#include "types_bikaya.h"
+	#include "utils.h"
 
 	#ifdef TARGET_UMPS
 
