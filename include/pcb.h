@@ -27,7 +27,8 @@
 	struct pcb_t *removeChild(struct pcb_t *p);
 	struct pcb_t *outChild(struct pcb_t *p);
 
-	/* Fuzione aggiunta per la fase 2 */
+	//vaffanculo
+	struct pcb_t *removeChildNonOrfano(struct pcb_t *p);
 	struct pcb_t *returnFirstChild(struct pcb_t *p);
 	
 #endif

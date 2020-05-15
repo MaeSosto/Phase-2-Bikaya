@@ -4,7 +4,6 @@
 	#include "pcb.h"
 	#include "listx.h"
 	#include "types_bikaya.h"
-	#include "utils.h"
 
 	#ifdef TARGET_UMPS
 
@@ -12,6 +11,12 @@
 		#include <umps/arch.h>
 		#include <umps/cp0.h>
 		extern void termprint(char* str);
+
+
+	#define BUS_TODLOW  0x1000001c
+	#define BUS_TODHIGH 0x10000018
+	#define getTODLO() (*((unsigned int *)BUS_TODLOW))
+	
 
 	#endif
 

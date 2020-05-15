@@ -1,47 +1,35 @@
 
 #include "include/handler.h"
 
-void bp_hadler_TRAP_else(){}
-void bp_hadler_TLB_else(){}
-void bp_flag_TRUE(){}
-void bp_hadler_TLB_OK(){}
-void bp_hadler_TLB_NO_OK(){}
-void bp_hadler_TRAP_OK(){}
-void bp_hadler_TRAP_NO_OK(){}
-
 extern void stampaCauseExc(int n);
-#define INTERRUPT_PENDING_MASK     	0x0000ff00
-#define INTERRUPT_PENDING_B      	8
-#define INTERRUPT_PENDING_FUNC(x)   (((x) & INTERRUPT_PENDING_MASK) >> INTERRUPT_PENDING_B)
-
-#define INT_IP_GET(cause) ((cause >> 8) & 0xFF)
 
 int tempo=FALSE;
 
 //Gestore degli interrupt
 void interruptHandler(){
 	
-	//Controllo se ho un processo attivo (perché non dovrei averlo?)
-	if(ACTIVE_PCB != NULL){
-
-		//Non so se vengo da user mode o da kernel mode ma in ogni modo smetto di contare il tempo
-		stopUserTime(ACTIVE_PCB);
-		stopKernelTime(ACTIVE_PCB);
-
-		//Inizio a contare il tempo in kernel mode
-		startKernelTime(ACTIVE_PCB);
-
-	}
-	
-	else{
-
-		PANIC();
-	
-	}
-	
-
-
 	tempo = FALSE;
+
+	//Se il processo non è NULL gestisco il tempo
+	if(tempo || ACTIVE_PCB != NULL){
+		
+		#ifdef TARGET_UMPS
+			if(ACTIVE_PCB->user_start > 0){
+
+				//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
+				ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
+
+				//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
+				ACTIVE_PCB->user_start = 0;
+				
+			}
+		
+		#endif
+
+		//inizio a contare il tempo in kernel mode
+		//ACTIVE_PCB->kernel_start = getTODLO();
+	}
+
 
 	//Prendo l' old area dell'interrupt al processo
 	state_t *AREA=(state_t *) INT_OLDAREA;
@@ -69,12 +57,26 @@ void interruptHandler(){
 
 	#endif
 
+	
+	//Linee interrupt da confrontare per trovare l'interrupt giusto fra gli 8 possibili
+	if(ACTIVE_PCB != NULL){
+
+		#ifdef TARGET_UMPS
+
+			//inizio a contare il tempo in kernel mode
+			ACTIVE_PCB->kernel_start = getTODLO();
+
+		#endif
+	}
 
 	#ifdef TARGET_UMPS
 		//Interrupt 1 - Inter-processor interrupts
 		if(CAUSE_IP_GET(cause, INT_T_SLICE)){
 			
 			InterruptPLC();
+			//????
+		// 	 setTIMER(TIME_SLICE);
+		//   scheduler();
 		
 		}
 
@@ -147,9 +149,23 @@ void interruptHandler(){
 	//Non ho processi attivi in cpu
 	if((tempo) | (ACTIVE_PCB==NULL)){
 		
-		//Se il processo non è NULL getisco il tempo
 		if(ACTIVE_PCB != NULL){
+			//Salvo i registri dell'old area dell'interrupt al processo
+			state_t *AREA=(state_t *) INT_OLDAREA;
+
+			/* Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato */
+			SavePCBToOldArea(AREA, &(ACTIVE_PCB->p_s));
+
 			
+			//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
+			//ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
+			
+			#ifdef TARGET_UMPS
+			
+				//Faccio partire l'user mode perchè finisco un interrupt
+				ACTIVE_PCB->user_start = getTODLO(); 
+
+			#endif 
 		
 		}
 
@@ -162,7 +178,17 @@ void interruptHandler(){
 
 	//Controllo se ho processi attivi
 	else if(ACTIVE_PCB != NULL){
-	
+		
+		#ifdef TARGET_UMPS
+
+			// //Salvo il valore del tempo in kernelmode perchè sto entrando in user mode 
+			 //ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+
+			ACTIVE_PCB->user_start = getTODLO(); 
+
+		#endif 
+
+
 		Scheduling();
 		
 	}
@@ -174,22 +200,23 @@ void interruptHandler(){
 //Gestore delle system call
 void syscallHandler(){
 
-	//Controllo se ho un processo attivo (perché non dovrei averlo?)
+	//Se il processo non è NULL gestisco il tempo
 	if(ACTIVE_PCB != NULL){
+		
+		#ifdef TARGET_UMPS
+			
+			if(ACTIVE_PCB->user_start > 0){
 
-		//Non so se vengo da user mode o da kernel mode ma in ogni modo smetto di contare il tempo
-		stopUserTime(ACTIVE_PCB);
-		stopKernelTime(ACTIVE_PCB);
+				//Salvo il valore del tempo in user mode perché sto entrando in kernel mode 
+				ACTIVE_PCB->user_total += (getTODLO() - ACTIVE_PCB->user_start);
 
-		//Inizio a contare il tempo in kernel mode
-		startKernelTime(ACTIVE_PCB);
+				//Resetta il timer parziale che usiamo per tenere traccia del tempo passato in user mode
+				ACTIVE_PCB->user_start = 0;
+				
+			}
+		
+		#endif
 
-	}
-	
-	else{
-
-		PANIC();
-	
 	}
 
 	unsigned int cause;
@@ -370,8 +397,16 @@ void syscallHandler(){
 		
 			ACTIVE_PCB->p_s.reg_v0 = ritorno;
 
-		#endif 
+			//Salvo il valore del tempo in kernel mode perchè sto entrando in user mode 
+			ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
 
+			//Setto
+			ACTIVE_PCB->kernel_start = 0;
+
+			//Faccio partire l'user mode perchè finisco un interrupt
+			ACTIVE_PCB->user_start = getTODLO();
+
+		#endif
 
 		#ifdef TARGET_UARM
 
@@ -395,24 +430,6 @@ void syscallHandler(){
 
 //Gestore delle trap
 void trapHandler(){
-
-	//Controllo se ho un processo attivo (perché non dovrei averlo?)
-	if(ACTIVE_PCB != NULL){
-
-		//Non so se vengo da user mode o da kernel mode ma in ogni modo smetto di contare il tempo
-		stopUserTime(ACTIVE_PCB);
-		stopKernelTime(ACTIVE_PCB);
-
-		//Inizio a contare il tempo in kernel mode
-		startKernelTime(ACTIVE_PCB);
-
-	}
-	
-	else{
-
-		PANIC();
-	
-	}
 
 	unsigned int cause;
 
@@ -454,38 +471,35 @@ void trapHandler(){
 	//umps 6 uarm 2 okk
 	//stampaCauseExc(cause);
 
-	if(flag){
-
-		bp_flag_TRUE();
+	if(flag && ACTIVE_PCB->PTNew != NULL && ACTIVE_PCB->PTOld != NULL){
 
 		SavePCBToOldArea((state_t*)PGMTRAP_OLDAREA, &(ACTIVE_PCB->p_s));
 		
-		if(ACTIVE_PCB->PTNew != NULL && ACTIVE_PCB->PTOld != NULL){
 			
-			bp_hadler_TRAP_OK();
-			
-			//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
-
-			SavePCBToOldArea((state_t*)PGMTRAP_OLDAREA,  (ACTIVE_PCB->PTOld));
-			
-			//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
-			LDST(ACTIVE_PCB->PTNew);
 		
-		}
-		else{
-			
-			bp_hadler_TRAP_NO_OK();
+		//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
 
-			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
-			TerminateProcess(0);
+		SavePCBToOldArea((state_t*)PGMTRAP_OLDAREA,  (ACTIVE_PCB->PTOld));
+		
+		//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
+		LDST(ACTIVE_PCB->PTNew);
+	
 
-			ACTIVE_PCB = NULL;
-
-			Scheduling();
-			
-		}
-
+	
 	}
+
+	else{
+		
+
+		//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
+		TerminateProcess(0);
+
+		ACTIVE_PCB = NULL;
+
+		Scheduling();
+		
+	}
+
 
 }
 
@@ -494,24 +508,6 @@ void trapHandler(){
 //TLB HADLER
 void tlbHandler(){
 
-	//Controllo se ho un processo attivo (perché non dovrei averlo?)
-	if(ACTIVE_PCB != NULL){
-
-		//Non so se vengo da user mode o da kernel mode ma in ogni modo smetto di contare il tempo
-		stopUserTime(ACTIVE_PCB);
-		stopKernelTime(ACTIVE_PCB);
-
-		//Inizio a contare il tempo in kernel mode
-		startKernelTime(ACTIVE_PCB);
-
-	}
-	
-	else{
-
-		PANIC();
-	
-	}
-	
 	unsigned int cause;
 
 	state_t *AREA = (state_t *) TLB_OLDAREA;
@@ -552,37 +548,33 @@ void tlbHandler(){
 	//umps 13 uarm 2 okk
 	//stampaCauseExc(cause);
 
-	if(flag){
-
-		bp_flag_TRUE();
+	if(flag && ACTIVE_PCB->TLBNew != NULL && ACTIVE_PCB->TLBOld != NULL){
 
 		SavePCBToOldArea((state_t*)TLB_OLDAREA, &(ACTIVE_PCB->p_s));
 		
-		if(ACTIVE_PCB->TLBNew != NULL && ACTIVE_PCB->TLBOld != NULL){
-			
-			bp_hadler_TLB_OK();
-			
-			//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
 
-			SavePCBToOldArea((state_t*)TLB_OLDAREA,  (ACTIVE_PCB->TLBOld));
-			
-			//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
-			LDST(ACTIVE_PCB->TLBNew);
+
 		
-		}
-		else{
+		//c'è un gestore di livello superiore di tipo TLB, perciò si copia nell'old area lo stato del processo corrente e si carica nel curr_proc il codice della new area.*/
 
-			bp_hadler_TLB_NO_OK();
+		SavePCBToOldArea((state_t*)TLB_OLDAREA,  (ACTIVE_PCB->TLBOld));
+		
+		//SavePCBToOldArea(ACTIVE_PCB->PTOld, &(ACTIVE_PCB->p_s));
+		LDST(ACTIVE_PCB->TLBNew);
+		
 
-			//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
-			TerminateProcess(0);
+		
+	}
+	else{
 
-			ACTIVE_PCB = NULL;
 
-			Scheduling();
-			
-		}
+		//non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
+		TerminateProcess(0);
 
+		ACTIVE_PCB = NULL;
+
+		Scheduling();
+		
 	}
 
 }

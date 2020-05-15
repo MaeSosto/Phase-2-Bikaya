@@ -3,41 +3,41 @@
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){
     
-   // #ifdef TARGET_UMPS
+    #ifdef TARGET_UMPS
         
-        // // Incremento il tempo totale del kernel
-        // // ACTIVE_PCB->kernel_total += getTODLO()-ACTIVE_PCB->kernel_total;
+        // Incremento il tempo totale del kernel
+        // ACTIVE_PCB->kernel_total += getTODLO()-ACTIVE_PCB->kernel_total;
 
         
-        // //Incremento il tempo totale del kernel
-        // ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + (getTODLO()-ACTIVE_PCB->kernel_start);
+        //Incremento il tempo totale del kernel
+        ACTIVE_PCB->kernel_total = ACTIVE_PCB->kernel_total + (getTODLO()-ACTIVE_PCB->kernel_start);
         
-        // //Incremento il tempo totale dello user
-        // //ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
+        //Incremento il tempo totale dello user
+        //ACTIVE_PCB->user_total = ACTIVE_PCB->user_total + getTODLO()-ACTIVE_PCB->user_start;
         
             
-        // //Se ho un tempo user lo assegno 
-        // if(user != NULL){
+        //Se ho un tempo user lo assegno 
+        if(user != NULL){
 
-        //     *(user) = ACTIVE_PCB->user_total;
+            *(user) = ACTIVE_PCB->user_total;
             
-        // }
+        }
         
-        // //Se ho un tempo kernel lo assegno 
-        // if(kernel != NULL){
+        //Se ho un tempo kernel lo assegno 
+        if(kernel != NULL){
             
-        //     *(kernel) = ACTIVE_PCB->kernel_total;
+            *(kernel) = ACTIVE_PCB->kernel_total;
         
-        // }
+        }
             
-        // //Se ho un tempo totale lo assegno 
-        // if(wallclock != NULL){
+        //Se ho un tempo totale lo assegno 
+        if(wallclock != NULL){
         
-        //     *(wallclock) = getTODLO() - ACTIVE_PCB->wallclock_start;
+            *(wallclock) = getTODLO() - ACTIVE_PCB->wallclock_start;
         
-        // }
+        }
 
-    //#endif
+    #endif
     
 }
 
@@ -47,8 +47,7 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
     //Creo nuovo processo figlio
     pcb_t* tempPcb = allocPcb();
    
-    //Ha successo: cpid non NULL e tempPcb allocato correttamente
-    if (tempPcb != NULL){
+    if (tempPcb != NULL){ //Ha successo: cpid non NULL e tempPcb allocato correttamente
 
         //Assegno lo stato del nuovo processo figlio
         SavePCBToOldArea(statep, &(tempPcb->p_s));
@@ -229,7 +228,19 @@ void Passeren(int *semaddr){
 
         //Copio lo stato della old area della sys nel processo che lo ha sollevato 
         SavePCBToOldArea(oldarea, &(ACTIVE_PCB->p_s));
-               
+        
+        #ifdef TARGET_UMPS
+        
+            //Salvo il valore del tempo in kernelmode
+            if(ACTIVE_PCB->kernel_start > 0){
+
+                ACTIVE_PCB->kernel_total += getTODLO() - ACTIVE_PCB->kernel_start;
+                ACTIVE_PCB->kernel_start = 0;
+
+            }
+        
+        #endif 
+        
         //Metto il processo nella coda del semaforo
 	 	int ret = insertBlocked(semaddr, ACTIVE_PCB);
         
@@ -371,7 +382,7 @@ int SpecPassup(int type, state_t *old, state_t *nuovo){
     //Se devo assegnare l'handler del livello superiore di una Sys o Bp e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
     if(type == 0 && ACTIVE_PCB->SysOld == NULL && ACTIVE_PCB->SysNew == NULL ){
 
-        //Assegno le aree Sys/Bp
+        //Assegno le aree
         ACTIVE_PCB->SysOld = old;
         ACTIVE_PCB->SysNew = nuovo;
         
@@ -382,7 +393,7 @@ int SpecPassup(int type, state_t *old, state_t *nuovo){
     //Se devo assegnare l'handler del livello superiore di una TLB e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
     if(type == 1 && ACTIVE_PCB->TLBOld == NULL && ACTIVE_PCB->TLBNew == NULL ){        
 
-        //Assegno le aree TLB
+        //Assegno le aree
         ACTIVE_PCB->TLBOld = old;
         ACTIVE_PCB->TLBNew = nuovo;
         
@@ -390,10 +401,10 @@ int SpecPassup(int type, state_t *old, state_t *nuovo){
 
     }
 
-    //Se devo assegnare l'handler del livello superiore di una Program Trap e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    //Se devo assegnare l'handler del livello superiore di una Program trap e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
     if(type == 2 && ACTIVE_PCB->PTOld == NULL && ACTIVE_PCB->PTNew == NULL ){
 
-        //Assegno le aree Program Trap
+        //Assegno le aree
         ACTIVE_PCB->PTOld = old;
         ACTIVE_PCB->PTNew = nuovo;
         

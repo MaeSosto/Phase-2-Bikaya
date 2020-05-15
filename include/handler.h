@@ -41,7 +41,17 @@
         //#define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 24)))
 
     #endif
-       
+
+    #define INTERRUPT_PENDING_MASK     	0x0000ff00
+    #define INTERRUPT_PENDING_B      	8
+    #define INTERRUPT_PENDING_FUNC(x)   (((x) & INTERRUPT_PENDING_MASK) >> INTERRUPT_PENDING_B)
+
+    #define INT_IP_GET(cause) ((cause >> 8) & 0xFF)
+
+    // #define BUS_TODLOW  0x1000001c
+    // #define BUS_TODHIGH 0x10000018
+    // #define getTODLO() (*((unsigned int *)BUS_TODLOW))
+        
     extern struct pcb_t *ACTIVE_PCB;
     extern struct list_head* ready_queue;
 
