@@ -5,7 +5,7 @@ extern int tempo;
 //PROCESSOR LOCAL TIMER 1 - DA ELIMINARE
 void InterruptPLC(){
 	
-	//????
+	
 	// 	 setTIMER(TIME_SLICE);
     //   scheduler();
 

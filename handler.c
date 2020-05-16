@@ -185,7 +185,7 @@ void syscallHandler(){
 		//SYSCALL 1
 		if(param0 == GETCPUTIME){
 			
-			getCPUTime(&param1, &param2, &param3);
+			getCPUTime((unsigned int*)param1, (unsigned int*)param2, (unsigned int*)param3);
 
 		}
 

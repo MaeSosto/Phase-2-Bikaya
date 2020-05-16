@@ -4,6 +4,8 @@ void isChild_TRUE(){}
 void isChild_FALSE(){}
 void isChild_ELSE(){}
 
+unsigned int tempogetTODLO;
+
 //Inizializzo le Areas
 void setAreas(){
 
@@ -309,10 +311,11 @@ void stopKernelTime(pcb_t * p){
 
 	if(p->kernel_start > 0){
 
-		p->kernel_total = p->kernel_total + getTODLO() - p->kernel_start ;
+		p->kernel_total = p->kernel_total + (getTODLO() - p->kernel_start) ;
 
 		p->kernel_start = 0;
 
+		
 	}
 
 }
@@ -326,6 +329,8 @@ void stopUserTime(pcb_t *p){
 
 		p->user_start = 0;
 
+		
+		
 	}	
 
 }
@@ -350,5 +355,3 @@ void startUserTime(pcb_t *p){
 	p->user_start = getTODLO();
 
 }
-
-

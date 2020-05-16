@@ -20,10 +20,6 @@
  *      Modified by Mattia Maldini, Renzo Davoli 2020
  */
 
-
-
-extern void stampaCauseExc(int n);
-
 #ifdef TARGET_UMPS
 #include "umps/libumps.h"
 #include "umps/arch.h"
@@ -95,6 +91,15 @@ typedef unsigned int pid_t;
 /* just to be clear */
 #define NOLEAVES 4 /* number of leaves of p7 process tree */
 #define MAXSEM   20
+
+
+unsigned int tempo;
+unsigned int user1;
+unsigned int user2;
+unsigned int kernel1;
+unsigned int kernel2;
+unsigned int cellatext;
+
 
 
 int term_mut = 1,   /* for mutual exclusion on terminal */
@@ -258,6 +263,7 @@ void test() {
     SYSCALL(CREATEPROCESS, (int)&p5state, DEFAULT_PRIORITY, 0); /* start p5		*/
 
     SYSCALL(CREATEPROCESS, (int)&p6state, DEFAULT_PRIORITY, 0); /* start p6		*/
+
     SYSCALL(VERHOGEN, (int)&blkp7, 0, 0);
 
     /* now for a more rigorous check of process termination */
@@ -265,6 +271,7 @@ void test() {
         SYSCALL(PASSEREN, (int)&blkp7, 0, 0);
         blkp7child = 0;
         blkleaves  = 0;
+
         creation = SYSCALL(CREATEPROCESS, (int)&p7rootstate, DEFAULT_PRIORITY, (int)&p7pid);
 
         if (creation == ERROR) {
@@ -273,7 +280,6 @@ void test() {
         }
 
         SYSCALL(PASSEREN, (int)&endp7, 0, 0);
-
         SYSCALL(TERMINATEPROCESS, (int)p7pid, 0, 0);
 
         SYSCALL(VERHOGEN, (int)&blkp7, 0, 0);
@@ -282,7 +288,6 @@ void test() {
     }
 
     print("\n");
-
 
     print("p1 finishes OK -- TTFN\n");
     *((memaddr *)BADADDR) = 0; /* terminate p1 */
@@ -321,17 +326,27 @@ void p2() {
     print("p2 v/p pairs successfully\n");
 
     /* test of SYS6 */
-
+    
+    
+    
     now1 = getTODLO();                                                       /* time of day   */
     SYSCALL(GETCPUTIME, (int)&user_t1, (int)&kernel_t1, (int)&wallclock_t1); /* CPU time used */
-    
+
+    user1=user_t1;
+    kernel1=kernel_t1;
 
     /* delay for some time */
     for (i = 1; i < LOOPNUM; i++)
         ;
 
+   
+
     SYSCALL(GETCPUTIME, (int)&user_t2, (int)&kernel_t2, (int)&wallclock_t2); /* CPU time used */
-    now2 = getTODLO();                                                       /* time of day  */
+    now2 = getTODLO();    
+    
+    user2=user_t2;
+    kernel2=kernel_t2;
+                                                           /* time of day  */
 
     if (((user_t2 - user_t1) >= (kernel_t2 - kernel_t1)) && ((wallclock_t2 - wallclock_t1) >= (user_t2 - user_t1)) &&
         ((now2 - now1) >= (wallclock_t2 - wallclock_t1)) && ((user_t2 - user_t1) >= MINLOOPTIME)) {
@@ -486,11 +501,6 @@ void p4() {
     /* this because they must restart using some BIOS area */
 
     /* specify trap vectors */
-
-
-
-    //stampaCauseExc(CAUSE_CODE(pstat_o));
-    
     SYSCALL(SPECPASSUP, 2, (int)&pstat_o, (int)&pstat_n);
 
     SYSCALL(SPECPASSUP, 1, (int)&mstat_o, (int)&mstat_n);
@@ -547,7 +557,8 @@ void p4b() {
 void p5() {
     print("p5 starts (and hopefully dies)\n");
 
-    SYSCALL(13, 0, 0, 0); /* should cause termination because p5 has no trap vector */
+    SYSCALL(13, 0, 0, 0); /* should cause termination because p5 has no
+                                                                                                   trap vector */
 
     print("error: p5 alive after SYS13() with no trap vector\n");
 

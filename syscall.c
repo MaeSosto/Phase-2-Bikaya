@@ -1,16 +1,33 @@
 #include "include/syscall.h"
 
+unsigned int userTime;
+unsigned int kernelTime;
+unsigned int wallclockTime;
+unsigned int userPassato;
+unsigned int cella;
+
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){  
 
     //Aggiorno i due valori
     stopKernelTime(ACTIVE_PCB);
     stopUserTime(ACTIVE_PCB);
-
+        
     //Assegno i valori ai registri
-    *(user) = ACTIVE_PCB->user_total;
-    *(kernel) = ACTIVE_PCB->kernel_total;
-    *(wallclock) = getTODLO() - ACTIVE_PCB->wallclock_start;
+    
+
+        *user = ACTIVE_PCB->user_total;
+
+    
+        *kernel = ACTIVE_PCB->kernel_total;
+
+    
+        *wallclock = getTODLO() - ACTIVE_PCB->wallclock_start;
+
+    userTime = ACTIVE_PCB->user_total;
+    kernelTime = ACTIVE_PCB->kernel_total;
+    wallclockTime = ACTIVE_PCB->wallclock_start;
+
 
     //Riprendo in kernel mode
     startKernelTime(ACTIVE_PCB);
@@ -30,6 +47,7 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
 
         //Settiamo la priority
         tempPcb->priority = priority;
+        
         tempPcb->original_priority = priority;
 
         //Inserisco tempPcb come figlio di ACTIVE_PCB

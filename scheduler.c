@@ -1,5 +1,6 @@
 #include "include/scheduler.h"
 
+
 //Auementa di 1 unità la priorità di ogni processo in coda e reimposta la priorità origiale del processo che è appena stato eseguito e lo rimette in attesa
 void Aging(){
    
@@ -35,6 +36,8 @@ void ContextSwitch(){
 				ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
 				ACTIVE_PCB->kernel_start=0;
 
+					
+
 			}
 		
 		#endif
@@ -60,12 +63,13 @@ void ContextSwitch(){
 	
 		//Assegno il tempo assoluto di inizio del processo
 		ACTIVE_PCB->wallclock_start = getTODLO();
-
+		
+	
 	}
 
 	//Faccio partire il tempo in user mode
 	startUserTime(ACTIVE_PCB);
-
+	
 	//Carico il processo nel processore
    	LDST(&ACTIVE_PCB->p_s);   
 
