@@ -1,7 +1,6 @@
 #include "include/scheduler.h"
 
-
-//Auementa di 1 unità la priorità di ogni processo in coda e reimposta la priorità origiale del processo che è appena stato eseguito e lo rimette in attesa
+//Aumenta di 1 unità la priorità di ogni processo in coda e reimposta la priorità origiale del processo che è appena stato eseguito e lo rimette in attesa
 void Aging(){
    
 	struct list_head *tempList = NULL;
@@ -28,21 +27,7 @@ void ContextSwitch(){
 		//Faccio l'aging
 		Aging();
 
-		#ifdef TARGET_UMPS
-			
-			//Fermo tempo in kernel mode del proc che mettiamo nella ready queue??
-			if(ACTIVE_PCB->kernel_start>0){
-
-				ACTIVE_PCB->kernel_total += (getTODLO() - ACTIVE_PCB->kernel_start);
-				ACTIVE_PCB->kernel_start=0;
-
-					
-
-			}
-		
-		#endif
-		
-		//Smetto di contare il tempo in user mode
+		//Smetto di contare il tempo in user mode del processo che inserisco nella ready queue
 		stopUserTime(ACTIVE_PCB);
 
 		//Metto il processo nella Ready Queue
@@ -58,13 +43,12 @@ void ContextSwitch(){
     //Setto il timer del processo
     *(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
 	
-	//Se non ho mai settato il tempo iniziale 
+	//Setto il tempo iniziale se non l'ho mai settato
 	if(ACTIVE_PCB->wallclock_start == 0){
 	
 		//Assegno il tempo assoluto di inizio del processo
 		ACTIVE_PCB->wallclock_start = getTODLO();
 		
-	
 	}
 
 	//Faccio partire il tempo in user mode
@@ -75,11 +59,16 @@ void ContextSwitch(){
 
 }
 
-//Setta un Time slice di 3000ms e alterna i processi in coda sulla Ready Queue e li carica nel processore
+
+//SCHEDULING
+
+//Setta un Time slice di 3000ms e alterna i processi in coda sulla Ready Queue e sui semafori e li carica nel processore
 void Scheduling(){
 
+	//Gestione del tempo
 	if(ACTIVE_PCB != NULL){
-
+		
+		//Faccio lo switch del tempo tra kernel mode a user mode
 		stopKernelTime(ACTIVE_PCB);
 		stopUserTime(ACTIVE_PCB);
 		startUserTime(ACTIVE_PCB);
@@ -91,17 +80,16 @@ void Scheduling(){
 		
 		//Faccio un context switch per prendere il processo successivo
 		ContextSwitch();
+
 	}
 
 	//La coda è vuota
 	else{
 
-		//termprint("Scheduler: coda dei processi vuota \n");
-
 		//Ho processi in esecuzione
 		if(ACTIVE_PCB != NULL){
 
-			//Metto via il processo corrente in cpu e ne prendo un'altro
+			//Metto via il processo corrente e ne prendo un altro dalla ready queue
 			ContextSwitch();
 
 		}
@@ -109,10 +97,10 @@ void Scheduling(){
 		//Non ho processi in esecuzione
 		else{
 
-			//Controllo se ho processi bloccati nei semafori
+			//Controllo se ho processi bloccati sui semafori
 			if(BLOCK_COUNT > 0){
 
-				//Ho solo processi bloccati, aspetto
+				//Ho solo processi bloccati, aspetto un interrupt
 
 				//Setto il timer
   				*(unsigned int*)BUS_REG_TIMER = TIME_SLICE;
@@ -121,8 +109,7 @@ void Scheduling(){
 				#ifdef TARGET_UMPS
 	
 					//Abilito tutti gli interrupt e vado in kernel mode
-					// setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IM_MASK);
-					setSTATUS((getSTATUS() | STATUS_IEc) | STATUS_IM_MASK);//interrupt abilitati
+					setSTATUS((getSTATUS() | STATUS_IEc) | STATUS_IM_MASK);
 				
 				#endif
 				
@@ -136,13 +123,13 @@ void Scheduling(){
 
 				#endif
 
-				//aspetto che si sollevi un interrupt da un device. Questo mi sblocca un processo in attesa sul semaforo del device.
+				//Aspetto che si sollevi un interrupt da un device. L'interupt mi sblocca un processo in attesa sul semaforo del device
 				WAIT();
 			}
 			
 			//Non ci sono processi in ready queue, nè attivi, nè bloccati sui semafori
 			else{
-
+					
 				HALT();
 
 			}

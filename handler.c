@@ -1,14 +1,11 @@
-
 #include "include/handler.h"
-
-extern void stampaCauseExc(int n);
 
 int tempo = FALSE;
 
 //Gestore degli interrupt
 void interruptHandler(){
 	
-	//Se ho un processo attivo smetto di contare il tempo in user/kernel mode e passo alla kernel mode
+	//Gestione del tempo
 	if(ACTIVE_PCB != NULL){
 
 		stopUserTime(ACTIVE_PCB);
@@ -19,8 +16,8 @@ void interruptHandler(){
 
 	tempo = FALSE;
 
-	//Prendo l' old area dell'interrupt al processo
-	state_t *AREA=(state_t *) INT_OLDAREA;
+	//Prendo l'old area dell'interrupt
+	state_t *AREA = (state_t *) INT_OLDAREA;
 
 	unsigned int cause;
 
@@ -41,16 +38,12 @@ void interruptHandler(){
 
 	#endif
 
-	
+	//Interrupt 1 - Inter-processor interrupts
 	#ifdef TARGET_UMPS
 	
-		//Interrupt 1 - Inter-processor interrupts
 		if(CAUSE_IP_GET(cause, INT_T_SLICE)){
 			
 			InterruptPLC();
-			//????
-		// 	 setTIMER(TIME_SLICE);
-		//   scheduler();
 		
 		}
 
@@ -59,15 +52,14 @@ void interruptHandler(){
 	#ifdef TARGET_UARM
 
 		//Interrupt 1 - Inter-processor interrupts 
-		//Non c'è un uARM
+		//Non presente in un uARM
 		if(0){}
 
 	#endif
 	
-	//Interrupt 2 Interval Timer
+	//Interrupt 2 - Interval Timer
 	else if(CAUSE_IP_GET(cause, INT_TIMER)){
 
-		//termprint("Interrupt: 2 \n");
 		InterruptIntervalTimer();
 
 	}
@@ -102,22 +94,21 @@ void interruptHandler(){
 
 	//Interrupt 7- Terminal
 	else if(CAUSE_IP_GET(cause, INT_TERMINAL)){
-		
-		//termprint("Interrupt: 7 \n");
 
 		InterruptTerminal();
 
 	}
 
-	//Smetto di contare il tempo in kernel mode e passo alla user mode se ho un processo attivo
-	if(ACTIVE_PCB != NULL){
 
+	if(ACTIVE_PCB != NULL){
+		
+		//gestione tempo
 		stopKernelTime(ACTIVE_PCB);
 
-		//Salvo i registri dell'old area dell'interrupt al processo
+		//Salvo i registri dell'old area dell'interrupt.
 		state_t *AREA=(state_t *) INT_OLDAREA;
 
-		//Copio lo stato della old area dell'intertupt nel processo che lo ha sollevato
+		//Copio lo stato dell'old area dell'intertupt nel processo che lo ha sollevato
 		SaveState(AREA, &(ACTIVE_PCB->p_s));
 
 	}
@@ -127,12 +118,16 @@ void interruptHandler(){
 
 }
 
-//====================================================================================================================
 
 //Gestore delle system call
 void syscallHandler(){
+	
+	unsigned int cause;
+	
+	//Variabile usata nel caso la system call abbia un valore di ritorno
+	unsigned int ritorno; 
 
-	//Se ho un processo attivo smetto di contare il tempo in user/kernel mode e passo alla kernel mode
+	//Gestiso il tempo
 	if(ACTIVE_PCB != NULL){
 
 		stopUserTime(ACTIVE_PCB);
@@ -141,18 +136,13 @@ void syscallHandler(){
 
 	}
 
-	unsigned int cause;
-	
-	unsigned int ritorno; //Assegno il valore di ritorno
-
 	state_t *AREA = (state_t *) SYSBK_OLDAREA;
 	
 	SaveState((state_t *) SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
-
 	
   	#ifdef TARGET_UMPS
 		
-		//Aumentiamo di una word
+		//Aumentiamo il program counter di una word
 		AREA->pc_epc = AREA->pc_epc + 4;
 		
 		//Accedo alla Old Area della system call
@@ -179,9 +169,7 @@ void syscallHandler(){
 
     //SYSCALL - EXC_SYSCAL = 8
     if(cause == EXC_SYSCALL){
-
-		//termprint("SYS \n");
-
+		
 		//SYSCALL 1
 		if(param0 == GETCPUTIME){
 			
@@ -220,7 +208,7 @@ void syscallHandler(){
 		//SYSCALL 6
 		else if(param0 == WAITIO){
 
-			GOODMORNING_PCB=ACTIVE_PCB;	
+			GOODMORNING_PCB = ACTIVE_PCB;	
 			ritorno = DO_IO((unsigned int)param1, (unsigned int*)param2, (int)param3);	
 		
 		}
@@ -239,10 +227,10 @@ void syscallHandler(){
 		
 		}
 		
-		//Se la syscall è maggiore di 8
+		//Se la syscall è maggiore di 8 passo la gestione della sys al gestore di livello superiore
 		else{
 			
-			//salvo lo stato
+			//Salvo lo stato
 			SaveState((state_t*)SYSBK_OLDAREA, &(ACTIVE_PCB->p_s));
 			
 			//Controllo se ho un gestore di livello superiore
@@ -255,17 +243,18 @@ void syscallHandler(){
 				stopKernelTime(ACTIVE_PCB);
 				startUserTime(ACTIVE_PCB);
 
-				//Cario la new area nel processore
+				//Carico la new area del gestore nel processore
 				LDST(ACTIVE_PCB->SysNew);
 			
 			}
 
+			//Non ho un gestore di livello superiore
 			else{
 				
 				//Gestione del tempo
 				stopKernelTime(ACTIVE_PCB);
 
-				//Non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
+				//Il processo va terminato
 				TerminateProcess(0);
 
 				//Non ho più un processo attivo
@@ -292,15 +281,16 @@ void syscallHandler(){
 			//Copio nell'old area del processo l'old area della sys
 			SaveState((state_t*)SYSBK_OLDAREA, (ACTIVE_PCB->SysOld));
 			
-			//Smetto di essere in kernel mode e passo alla user mode
+			//Gestione del tempo
 			stopKernelTime(ACTIVE_PCB);
 			startUserTime(ACTIVE_PCB);
 			
-			//Cario la new area nel processore 
+			//Carico la new area del gestore nel processore
 			LDST(ACTIVE_PCB->SysNew);
 		
 		}
 
+		//Non ho un gestore di livello superiore
 		else{
 
 			//Gestione del tempo
@@ -319,12 +309,14 @@ void syscallHandler(){
 
 	}
 
-	//Ho un processo ancora attivo in cpu
+
+	//Ho ancora un processo attivo
 	if(ACTIVE_PCB != NULL){
 
 		//Salvo lo stato
 		SaveState(AREA, &(ACTIVE_PCB->p_s));
 
+		//Setto il ritorno nel registro adeguato
 		#ifdef TARGET_UMPS
 		
 			ACTIVE_PCB->p_s.reg_v0 = ritorno;
@@ -341,6 +333,7 @@ void syscallHandler(){
 		stopKernelTime(ACTIVE_PCB);
 		startUserTime(ACTIVE_PCB);
 
+		//Carico il processo attivo e lo eseguo
 		LDST(&ACTIVE_PCB->p_s);
 
 	}
@@ -358,7 +351,7 @@ void syscallHandler(){
 //Gestore delle trap
 void trapHandler(){
 
-	//Se ho un processo attivo smetto di contare il tempo in user/kernel mode e passo alla kernel mode
+	//Gestione del tempo
 	if(ACTIVE_PCB != NULL){
 
 		stopUserTime(ACTIVE_PCB);
@@ -375,10 +368,10 @@ void trapHandler(){
 
 	#ifdef TARGET_UMPS
 		
-		//Accedo alla Old Area della system call
+		//Accedo alla old area della trap
 		cause = (CAUSE_GET_EXCCODE(AREA->cause));
 
-		//UMPS: 4-5-6-7-10-11-12
+		//Controllo se viene alzata un exception di questo tipo
 		if(cause==EXC_ADDRINVLOAD || cause==EXC_ADDRINVSTORE || cause==EXC_BUSINVFETCH || cause==EXC_BUSINVLDSTORE || cause==EXC_RESERVEDINSTR || cause==EXC_COPROCUNUSABLE || cause==EXC_ARITHOVERFLOW){
 
 			flag = TRUE;
@@ -389,10 +382,10 @@ void trapHandler(){
 
 	#ifdef TARGET_UARM
     
-    	//Accedo alla Old Area della system call
+    	//Accedo alla Old Area della trap
 		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
 		
-		//UARM: 16-17-2-1
+		//Controllo se viene alzata un exception di questo tipo
 		if(cause == EXC_ADDRINVLOAD || cause == EXC_ADDRINVSTORE || cause == EXC_BUSINVFETCH || cause == EXC_BUSINVLDSTORE || cause == MEMERROR){
 
 			flag = TRUE;
@@ -410,7 +403,7 @@ void trapHandler(){
 		//Copio nell'old area del processo l'old area della trap
 		SaveState((state_t*)PGMTRAP_OLDAREA,  (ACTIVE_PCB->PTOld));
 
-		//Smetto di essere in kernel mode e passo alla user mode
+		//Gestione del tempo
 		stopKernelTime(ACTIVE_PCB);
 		startUserTime(ACTIVE_PCB);
 		
@@ -443,7 +436,7 @@ void trapHandler(){
 //TLB HADLER
 void tlbHandler(){
 
-	//Se ho un processo attivo smetto di contare il tempo in user/kernel mode e passo alla kernel mode
+	//Gestione del tempo
 	if(ACTIVE_PCB != NULL){
 
 		stopUserTime(ACTIVE_PCB);
@@ -460,10 +453,10 @@ void tlbHandler(){
 
 	#ifdef TARGET_UMPS
 		
-		//Accedo alla Old Area della system call
+		//Accedo alla old area della tlb
 		cause = (CAUSE_GET_EXCCODE(AREA->cause));
 
-		//UMPS Exc_CODE: 1-2-3-13-14
+		//Controllo se viene alzata un exception di questo tipo
 		if(cause==EXC_TLBMOD || cause==EXC_TLBINVLOAD || cause==EXC_TLBINVSTORE || cause==EXC_BADPTE || cause==EXC_PTEMISS){
 
 			flag = TRUE;
@@ -474,10 +467,10 @@ void tlbHandler(){
 
 	#ifdef TARGET_UARM
     
-    	//Accedo alla Old Area della system call
+    	//Accedo alla old area della tlb
 		cause = CAUSE_EXCCODE_GET(AREA->CP15_Cause);
 
-		//UARM Exc_CODE: 18-14-15-10-11-9-8-12-13
+		//Controllo se viene alzata un exception di questo tipo 
 		if(cause == EXC_TLBMOD || cause ==  EXC_TLBINVLOAD || cause == EXC_TLBINVSTORE || cause == EXC_BADPTE || cause == EXC_PTEMISS || cause == EXC_BADPAGTBL || cause == EXC_BADSEGTBL || cause == UTLBLEXCEPTION || cause == UTLBSEXCEPTION){
 
 			flag = TRUE;
@@ -486,13 +479,10 @@ void tlbHandler(){
 
 	#endif
 	
-	//umps 13 uarm 2 okk
-	//stampaCauseExc(cause);
-
 	//Controllo se ho un gestore di livello superiore
 	if(flag && ACTIVE_PCB->TLBNew != NULL && ACTIVE_PCB->TLBOld != NULL){
 
-		//Salvo lo stato della old area della sys nel processo
+		//Salvo lo stato della old area della tlb nel processo
 		SaveState((state_t*)TLB_OLDAREA, &(ACTIVE_PCB->p_s));
 		
 		//Copio nell'old area del processo l'old area della tlb
@@ -513,7 +503,7 @@ void tlbHandler(){
 		//Gestione del tempo
 		stopKernelTime(ACTIVE_PCB);
 
-		//Non c'è un puntatore ad un gestore di livello superiore, e quindi il processo va terminato
+		//Il processo va terminato
 		TerminateProcess(0);
 
 		//Non ho più un processo attivo
