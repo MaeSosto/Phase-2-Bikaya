@@ -7,7 +7,6 @@
 	#include "const_bikaya.h"
 	#include "scheduler.h"
 	
-	
 	#ifdef TARGET_UMPS
 
 		#include <umps/cp0.h>
@@ -54,7 +53,6 @@
 	extern struct list_head* ready_queue;
 	extern struct device_semd Semaforo;
 	extern int SemMem[MAX_SEM];
-	extern void termprint(char *str);
 
 	//Inizializzo le Areas
 	void setAreas();
@@ -68,10 +66,10 @@
 	//Alloca spazio in memoria per i semafori dei device
 	void InitSemd();
 
-	//Qualsisi sia l'indirizzo passato (di una qualsiasi linea), restituisce un numero da 0 a 7 (quale device)
+	//Qualsisi sia l'indirizzo del registro passato, restituisce un numero da 0 a 7 
 	int numDev(unsigned int *registro);
 
-	//Qualsiasi sia l'indirizzo passato, restituisce un numero da 3 a 7 (quale linea)
+	//Qualsiasi sia l'indirizzo del registro passato, restituisce un numero da 3 a 7 
 	int numLine(unsigned int *registro);
 
 	//Restituisce 1 se l'eccezione è stata lanciata dal numero della linea e dal device in input
@@ -79,6 +77,9 @@
 
 	//Funzione che controlla se cercare è figlio di padre (o se sta nella sua progenie)
 	int isChild(pcb_t *padre, pcb_t *cercare);
+
+	//Ritorna il puntatore del primo pcb nella lista dei figli di padre, senza rimuoverlo
+	struct pcb_t *returnFirstChild(struct pcb_t *padre);
 
 	//Restituisce il tempo parziale passato da quado ho settato il kernel time	
 	void stopKernelTime(pcb_t * p);
@@ -94,7 +95,5 @@
 
 	//Inizia a contare il tempo in user mode
 	void startUserTime(pcb_t *p);
-
-
 
 #endif

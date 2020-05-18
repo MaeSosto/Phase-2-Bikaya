@@ -14,10 +14,8 @@
         #include "umps/cp0.h"
         #include <umps/libumps.h>
             
-        /* Returns 1 if the interrupt int_no is pending */
+        //Ritorna 1 se l'int_no (interrupt number) è in attesa
         #define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 8)))
-        
-        extern void termprint(char* str);
 
     #endif
 
@@ -28,17 +26,12 @@
         #include <uarm/arch.h>
         #include <uarm/libuarm.h>
 
-        /*
-        * CP0 Cause fields
-        */
+        //Ritorna il valore dell'eccezione che si è sollevata nel campo status
         #define CAUSE_EXCCODE_MASK     0x0000007c
         #define CAUSE_EXCCODE_BIT      2
         #define CAUSE_GET_EXCCODE(x)   (((x) & CAUSE_EXCCODE_MASK) >> CAUSE_EXCCODE_BIT)
 
         #define EXC_BP EXC_BREAKPOINT
-
-        //PER UARM VEDI FILE UARMcost.h riga 164
-        //#define CAUSE_IP_GET(cause, int_no) ((cause) & (1 << ((int_no) + 24)))
 
     #endif
 
@@ -47,15 +40,11 @@
     #define INTERRUPT_PENDING_FUNC(x)   (((x) & INTERRUPT_PENDING_MASK) >> INTERRUPT_PENDING_B)
 
     #define INT_IP_GET(cause) ((cause >> 8) & 0xFF)
-
-    // #define BUS_TODLOW  0x1000001c
-    // #define BUS_TODHIGH 0x10000018
-    // #define getTODLO() (*((unsigned int *)BUS_TODLOW))
         
     extern struct pcb_t *ACTIVE_PCB;
     extern struct list_head* ready_queue;
 
-    //dichiarazione delle funzioni
+    //Dichiarazione delle funzioni
     void syscallHandler();
     void trapHandler();
     void tlbHandler();

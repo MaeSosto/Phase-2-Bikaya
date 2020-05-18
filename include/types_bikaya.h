@@ -23,6 +23,7 @@
 
     // Process Control Block (PCB) data structure
     typedef struct pcb_t {
+
         /*process queue fields */
         struct list_head p_next;
 
@@ -41,11 +42,10 @@
         /* key of the semaphore on which the process is eventually blocked */
         int *p_semkey;
 
-        // campo command del pcb
+        // Campo command del pcb
         int command;
 
-
-        // timer di esecuzione
+        // Timer di esecuzione
         unsigned int user_start;
         unsigned int user_total;
         unsigned int kernel_start;
@@ -53,7 +53,7 @@
         unsigned int start_time;
         unsigned int wallclock_start;
 
-        //Aree in caso si passasse a un livello superiore
+        //Aree per la gestionde dell'handler di livello superiore
         state_t *SysOld;
         state_t *SysNew;
         state_t *TLBOld;
@@ -76,13 +76,17 @@
         struct list_head s_procQ;
     } semd_t;
 
+
+    //Struttura che contiene i semafori dei vari dispositivi
     typedef struct device_semd {
+
         semd_t disk[DEV_PER_INT];
         semd_t tape[DEV_PER_INT];
         semd_t network[DEV_PER_INT];
         semd_t printer[DEV_PER_INT];
         semd_t terminalT[DEV_PER_INT];
         semd_t terminalR[DEV_PER_INT];
+    
     } device_semd;
 
 

@@ -3,21 +3,16 @@
 //SYSCALL 1
 void getCPUTime(unsigned int *user, unsigned int *kernel, unsigned int *wallclock){  
 
-    //Aggiorno i due valori
+    //Aggiorno il tempo passato in kernel e in user mode
     stopKernelTime(ACTIVE_PCB);
     stopUserTime(ACTIVE_PCB);
         
     //Assegno i valori ai registri
-    
+    *user = ACTIVE_PCB->user_total;
 
-        *user = ACTIVE_PCB->user_total;
+    *kernel = ACTIVE_PCB->kernel_total;
 
-    
-        *kernel = ACTIVE_PCB->kernel_total;
-
-    
-        *wallclock = getTODLO() - ACTIVE_PCB->wallclock_start;
-
+    *wallclock = getTODLO() - ACTIVE_PCB->wallclock_start;
 
     //Riprendo in kernel mode
     startKernelTime(ACTIVE_PCB);
@@ -30,7 +25,8 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
     //Creo nuovo processo figlio
     pcb_t* tempPcb = allocPcb();
    
-    if (tempPcb != NULL){ //Ha successo: cpid non NULL e tempPcb allocato correttamente
+    //TempPcb allocato correttamente
+    if (tempPcb != NULL){ 
 
         //Assegno lo stato del nuovo processo figlio
         SaveState(statep, &(tempPcb->p_s));
@@ -46,7 +42,7 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
         //Inserisco il figlio nella ready queue
         insertProcQ(ready_queue, tempPcb);
 
-        //Se cpid non è vuoto lo aggiorno con il nuovo processo filgio istanziato, altrimenti lo lascia NULL
+        //Aggiorno cpid con il nuovo processo figlio istanziato
         if(cpid != NULL){
 
             *((pcb_t **)cpid) = tempPcb;
@@ -57,7 +53,7 @@ int CreateProcess(state_t *statep, int priority, void ** cpid){
         
     }
 	
-    //Non ha successo	
+    //TempPcb non allocato correttamente, la pcbFree è vuota
     else{ 
 
         return -1;
@@ -85,7 +81,7 @@ int TerminateProcess(void * pid){
 
         tempPcb = pid;
 
-        //Controllo se tempPCB è nella progenie di ACTIVEPCB, se non fa parte dela progenie è errore
+        //Controllo se tempPCB è nella progenie di ACTIVEPCB
         if( !isChild(ACTIVE_PCB, tempPcb) || (pid == NULL) ){
             
             return -1;
@@ -96,22 +92,25 @@ int TerminateProcess(void * pid){
 
     pcb_t *figlio;
 
-    //caso ricorsivo: tempPCB ha dei figli - chiamo la TerminateProcess sui figli
+    //Caso ricorsivo: tempPCB ha dei figli, chiamo la TerminateProcess sui figli
     if( !emptyChild(tempPcb) ){
 
         //Elimino la progenie del tempPcb
         figlio = returnFirstChild(tempPcb);
 
         while(figlio != NULL){
-            //Rimuove il PCB puntato da p dalla lista dei figli del padre
+            
+            //Chiamo ricorsivamente la TerminateProcess
             TerminateProcess(figlio);
-
+            
+            //Rimuove il PCB puntato da p dalla lista dei figli del padre
             figlio = returnFirstChild(tempPcb);
+        
         }
     
     }
     
-    //caso base: tempPCB è una foglia (non ha figli da eliminare - non deve andare in ricorsione)
+    //Caso base: tempPCB è una foglia (non ha figli da eliminare, non deve andare in ricorsione)
     else {
 
         //Togliere il tempPCB dalla lista dei padre->p_figli
@@ -150,29 +149,28 @@ int TerminateProcess(void * pid){
     
     }
 
-    tempPcb->p_parent = NULL; //vedi se funziona anche senza sto comando (sia umps che uarm)
-
+    //Rimetto il pcb nella pcbFree
     freePcb(tempPcb);
 
     return 0;
     
 }
 
-//SYSCALL 4 - risveglia il rocesso dall'attesa
+//SYSCALL 4
 void Verhogen(int *semaddr){
 
     //Incremento il semaforo
     *semaddr+=1;
 
-    //Prendo il primo processo messo in attesa - ritorna NULL se non ci sono processi
-    pcb_t* pcb_blocked = removeBlocked(semaddr);   
+    //Prendo il primo processo messo in attesa, ritorna NULL se non ci sono processi
+    pcb_t* pcb_blocked = removeBlocked(semaddr);
 
-	// Controllo se ho più thread nella lista d'attesa
+	//Controllo se ho più pcb nella lista d'attesa
 	if (*semaddr <= 0){     
          
         if(pcb_blocked!=NULL){
                         
-            //Setto la chiave del semaforo su cui il PCB è bloccato a NULL
+            //Setto la chiave del semaforo su cui il pcb è bloccato a NULL
             pcb_blocked->p_semkey = NULL;
 
             //Aggiorno il contatore dei processi bloccati
@@ -187,7 +185,7 @@ void Verhogen(int *semaddr){
 
 }
 
-//SYSCALL 5 - metto processo in attesa su un s
+//SYSCALL 5 
 void Passeren(int *semaddr){
 
     //Decremento il semaforo
@@ -196,7 +194,7 @@ void Passeren(int *semaddr){
     //Controllo se ci sono altri processi bloccati
     if (*semaddr < 0){
         
-        //Salvo i registri dell'old area della sys al processo 
+        //Salvo i registri dell'old area della sys al processo
         state_t* oldarea = ((state_t*)SYSBK_OLDAREA);
 
         //Copio lo stato della old area della sys nel processo che lo ha sollevato 
@@ -211,7 +209,7 @@ void Passeren(int *semaddr){
         //Aggiorno il contatore dei processi bloccati
         BLOCK_COUNT ++;
         
-        // L'ACTIVE PCB VA MESSO A NULL ALLA FINE DELLA SYSCALL PRIMA DI CHIAMARE LO SCHEDULER
+        //Il pcb viene settato a null per effettuare effettuare lo scheduling
         ACTIVE_PCB = NULL;
 
         //Assegnamento al semd NON andato a buon fine
@@ -237,7 +235,7 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
     dev = numDev((unsigned int *)registro);
     line = numLine((unsigned int *)registro);
 
-    //Non è un terminale
+    //Il device non è un terminale
     if(line < 7){
         
         //Blocco il processo 
@@ -248,63 +246,62 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
         
         dtpreg_t *devreg = (dtpreg_t *) registro;
 
+        //Copio il parametro command nel campo comando del registro del dispositivo
         if(!*sem){
 
             devreg->command = command;
 
         }
         
+        //Assegno lo status
         status = devreg->status;
-        //termprint ("Setto lo status 1 \n");
 
     }
 
-    //E' un terminale
+    //Il device è un terminale
     else{
 
         termreg_t *termreg = (termreg_t*) registro;
 
-        //Trasmissione
+        //Terminale in trasmissione
         if(subdevice == FALSE){
 
-            //Blocco il processo 
+            //Prendo il pcb in attesa sul semaforo
             sem = Semaforo.terminalT[dev].s_key;
 
-            
-            //La prima volta che entra inuna DoIO il dispositivo è ready, in quel caso non prendo il comando 
+            //Entra se il contenuto di sem è 0, ovvero se non ci sono processi bloccati su quel semaforo (il dispositivo è ready)
             if(!*sem){ 
                 
-                //Entra qua se il contenuto di sem è 0, ovvero se non ci sono processi bloccati su quel semaforo
-
                 termreg->transm_command = command;
             
             }
-         
 
+            //Assegno lo status
             status = termreg->transm_status;
 
         }
 
-        //Ricezione
+        //Terminale in ricezione
         else{
 
-            //Blocco il processo 
+            //Prendo il pcb in attesa sul semaforo
             sem = Semaforo.terminalR[dev].s_key;
             
+            //Entra se il contenuto di sem è 0, se non ci sono processi bloccati su quel semaforo (il dispositivo è ready)
             if(!*sem){ 
                 
-                //Entra qua se il contenuto di sem è 0, ovvero se non ci sono processi bloccati su quel semaforo
-
                 termreg->recv_command = command;
          
             }
-     
+
+            //Assegno lo status
             status = termreg->recv_status;
                                    
         }
        
     }
 
+    //Blocco il processo
     Passeren(sem);
 
     return status;
@@ -313,8 +310,8 @@ int DO_IO(unsigned int command, unsigned int* registro, int subdevice){
 
 //SYSCALL 7
 int SpecPassup(int type, state_t *old, state_t *nuovo){
-
-    //Se devo assegnare l'handler del livello superiore di una Sys o Bp e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    
+    //Assegno l'handler del livello superiore di una sys o bp nelle aree del Pcb, se non è mai stato assegnato
     if(type == 0 && ACTIVE_PCB->SysOld == NULL && ACTIVE_PCB->SysNew == NULL ){
 
         //Assegno le aree
@@ -325,7 +322,7 @@ int SpecPassup(int type, state_t *old, state_t *nuovo){
 
     }
 
-    //Se devo assegnare l'handler del livello superiore di una TLB e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    //Assegno l'handler del livello superiore di una tlb nelle aree del Pcb, se non è mai stato assegnato
     if(type == 1 && ACTIVE_PCB->TLBOld == NULL && ACTIVE_PCB->TLBNew == NULL ){        
 
         //Assegno le aree
@@ -336,18 +333,18 @@ int SpecPassup(int type, state_t *old, state_t *nuovo){
 
     }
 
-    //Se devo assegnare l'handler del livello superiore di una Program trap e le aree relative non sono ancora state settate nel PCB (quindi è la prima volta che le setto) allora le assegno
+    //Assegno l'handler del livello superiore di una trap nelle aree del Pcb, se non è mai stato assegnato
     if(type == 2 && ACTIVE_PCB->PTOld == NULL && ACTIVE_PCB->PTNew == NULL ){
 
         //Assegno le aree
         ACTIVE_PCB->PTOld = old;
         ACTIVE_PCB->PTNew = nuovo;
-        
+
         return 0;
 
     }
 
-    //Nessuno di questi: errore 
+    //Il tipo di exception non è riconosciuto
     else{
 
         return -1;
@@ -362,7 +359,7 @@ void getPid(void ** pid, void ** ppid){
     //Controllo se pid non è null allora faccio il dovuto assegnamento 
     if (pid != NULL){
 
-        // Assegna l’identificativo del processo corrente a *pid
+        //Assegna l’identificativo del processo corrente a *pid
         *pid = ACTIVE_PCB;
 
     }

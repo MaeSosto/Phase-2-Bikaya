@@ -32,8 +32,9 @@ struct list_head* ready_queue = &(r_queue);
 struct device_semd Semaforo;
 int SemMem[MAX_SEM];
 struct pcb_t *ACTIVE_PCB = NULL;
-struct pcb_t *GOODMORNING_PCB = NULL; //Processo svegliato nella Verhogen
-unsigned int BLOCK_COUNT = 0; //Viene incrementato/decrementato quando si aggiungono/rimuovono processi bloccati
+struct pcb_t *GOODMORNING_PCB = NULL;
+//Viene incrementato/decrementato quando si aggiungono/rimuovono processi bloccati
+unsigned int BLOCK_COUNT = 0;
 
 //MAIN
 int main(){
@@ -47,18 +48,11 @@ int main(){
 	//Inizializziamo la pcbFree
 	initPcbs();
 	
+	//Inizializza la lista dei semdFree
 	initASL();
 
 	//Instanziare il PCB e lo stato del singolo processo di test
 	insertProcQ(ready_queue, initAllPCB((unsigned int) test, 1));
-
-	#ifdef TARGET_UMPS
-	
-		//Setto lo status
-		//setSTATUS(getSTATUS() | STATUS_IEc | STATUS_IEp | STATUS_IM(2));
-	
-	#endif
-
 
 	//Faccio partite lo scheduling
 	Scheduling();

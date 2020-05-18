@@ -16,19 +16,13 @@
 	int emptyProcQ(struct list_head *head);
 	void insertProcQ(struct list_head *head, struct pcb_t *p);
 	struct pcb_t *headProcQ(struct list_head *head);
-
 	struct pcb_t *removeProcQ(struct list_head *head);
 	struct pcb_t *outProcQ(struct list_head *head, struct pcb_t *p);
-
 
 	/* PCB Tree view functions 10 - 13 */
 	int emptyChild(struct pcb_t *this);
 	void insertChild(struct pcb_t *prnt, struct pcb_t *p);
 	struct pcb_t *removeChild(struct pcb_t *p);
 	struct pcb_t *outChild(struct pcb_t *p);
-
-	//vaffanculo
-	struct pcb_t *removeChildNonOrfano(struct pcb_t *p);
-	struct pcb_t *returnFirstChild(struct pcb_t *p);
 	
 #endif

@@ -11,13 +11,10 @@
 		#include <umps/libumps.h>
 		#include <umps/arch.h>
 		#include <umps/cp0.h>
-		extern void termprint(char* str);
 
-
-	#define BUS_TODLOW  0x1000001c
-	#define BUS_TODHIGH 0x10000018
-	#define getTODLO() (*((unsigned int *)BUS_TODLOW))
-	
+		#define BUS_TODLOW  0x1000001c
+		#define BUS_TODHIGH 0x10000018
+		#define getTODLO() (*((unsigned int *)BUS_TODLOW))
 
 	#endif
 
@@ -25,7 +22,6 @@
 
 		#include <uarm/arch.h>
 		#include <uarm/libuarm.h>
-		extern void tprint(char* str);
 		
 	#endif
 

@@ -292,6 +292,20 @@ int isChild(pcb_t *padre, pcb_t *pcbProgenie){
 
 }
 
+//Ritorna il puntatore del primo pcb nella lista dei figli di padre, senza rimuoverlo
+struct pcb_t *returnFirstChild(struct pcb_t *padre){
+	
+	//Caso in cui padre non ha figli, ritorno NULL
+	if(emptyChild(padre)) return NULL;
+
+	//Caso in cui padre ha figli, restituisco il puntatore del primo
+	struct pcb_t *primofiglio = container_of(list_next(&padre->p_child),struct pcb_t, p_sib);
+	
+	//Restituisce il puntatore
+	return primofiglio;
+
+}
+
 //Restituisce il tempo parziale passato da quado ho settato il kernel time
 void stopKernelTime(pcb_t * p){
 

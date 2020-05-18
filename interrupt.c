@@ -2,10 +2,8 @@
 
 extern int tempo;
 
-//PROCESSOR LOCAL TIMER 1 - DA ELIMINARE
-void InterruptPLC(){
-	
-}
+//PROCESSOR LOCAL TIMER 1
+void InterruptPLC(){}
 
 //INTERVAL TIMER 2
 void InterruptIntervalTimer(){
@@ -29,6 +27,7 @@ void InterruptDisk(){
 			//Prendo il registro del device che ha lanciato l'interrupt
 			dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(INT_DISK, i);
 			
+			//Controllo se sul semaforo ci sono dei pcb bloccati
 			if(*Semaforo.disk[i].s_key < 0){
 								
 				//Sblocco il processo sul terminale in ricezione del device richiesto
@@ -76,6 +75,7 @@ void InterruptTape(){
 			//Prendo il registro del device che ha lanciato l'interrupt
 			dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(INT_TAPE, i);
 			
+			//Controllo se sul semaforo ci sono dei pcb bloccati
 			if(*Semaforo.tape[i].s_key < 0){
 								
 				//Sblocco il processo sul terminale in ricezione del device richiesto
@@ -123,6 +123,7 @@ void InterruptNetwork(){
 			//Prendo il registro del device che ha lanciato l'interrupt
 			dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(INT_UNUSED, i);
 			
+			//Controllo se sul semaforo ci sono dei pcb bloccati
 			if(*Semaforo.network[i].s_key < 0){
 								
 				//Sblocco il processo sul terminale in ricezione del device richiesto
@@ -170,6 +171,7 @@ void InterruptPrinter(){
 			//Prendo il registro del device che ha lanciato l'interrupt
 			dtpreg_t *reg = (dtpreg_t *)DEV_REG_ADDR(INT_PRINTER, i);
 			
+			//Controllo se sul semaforo ci sono dei pcb bloccati
 			if(*Semaforo.printer[i].s_key < 0){
 								
 				//Sblocco il processo sul terminale in ricezione del device richiesto
@@ -220,6 +222,7 @@ void InterruptTerminal(){
 			//Il terminale in RICEZIONE non è ready
 			if((reg->recv_status & TERMSTATMASK)!= 1){
 				
+				//Controllo se sul semaforo ci sono dei pcb bloccati
 				if(*Semaforo.terminalR[i].s_key < 0){
 									
 					//Sblocco il processo sul terminale in ricezione del device richiesto
@@ -227,18 +230,18 @@ void InterruptTerminal(){
 
 					#ifdef TARGET_UMPS
 					
-					//Aggiorno lo status del processo svegliato
-					GOODMORNING_PCB->p_s.reg_v0 = reg->recv_status;
+						//Aggiorno lo status del processo svegliato
+						GOODMORNING_PCB->p_s.reg_v0 = reg->recv_status;
 
-				#endif
+					#endif
 
-				#ifdef TARGET_UARM
+					#ifdef TARGET_UARM
 
-					//Aggiorno lo status del processo svegliato
-					GOODMORNING_PCB->p_s.a1 = reg->recv_status;
+						//Aggiorno lo status del processo svegliato
+						GOODMORNING_PCB->p_s.a1 = reg->recv_status;
 
 
-				#endif
+					#endif
 									
 				}
 				
@@ -253,7 +256,8 @@ void InterruptTerminal(){
 
 			//Il terminale in TRASMISSIONE non è ready
 			if((reg->transm_status & TERMSTATMASK)!= 1){
-
+				
+				//Controllo se sul semaforo ci sono dei pcb bloccati
 				if(*Semaforo.terminalT[i].s_key < 0){
 									
 					//Sblocco il processo sul terminale in ricezione del device richiesto
